@@ -1,0 +1,41 @@
+services:
+
+  userservice:
+    build: ./userservice
+    container_name: userservice
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://user-db:5432/userservice
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      JWT_SECRET: auth-secret-key-for-json-web-token-service-123456
+    depends_on:
+      - user-db
+      - redis
+
+  user-db:
+    image: postgres:16
+    container_name: userservice_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: userservice
+    ports:
+      - "5432:5432"
+    volumes:
+      - user_db_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: userservice_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  user_db_data:
