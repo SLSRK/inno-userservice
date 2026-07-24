@@ -1,6 +1,7 @@
 package com.innowise.userservice;
 
 import com.innowise.userservice.exception.CardsQuantityException;
+import com.innowise.userservice.exception.NotActiveException;
 import com.innowise.userservice.exception.NotFoundException;
 import com.innowise.userservice.mapper.PaymentCardMapper;
 import com.innowise.userservice.model.dto.PaymentCardCreateDto;
@@ -19,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
@@ -104,6 +106,53 @@ class PaymentCardServiceTest {
                 .thenReturn(Optional.empty());
         assertThrows(
                 NotFoundException.class,
+                () -> service.getPaymentCardById(1L)
+        );
+    }
+
+    @Test
+    void createPaymentCard_shouldThrowWhenUserNotFound() {
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.empty());
+        assertThrows(
+                NotFoundException.class,
+                () -> service.createPaymentCard(
+                        1L,
+                        new PaymentCardCreateDto()
+                )
+        );
+    }
+
+    @Test
+    void createPaymentCard_shouldCopyUserActiveStatus() {
+        User user = new User();
+        user.setActive(false);
+
+        PaymentCard card = new PaymentCard();
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+        when(paymentCardMapper.toEntityWithUser(any()))
+                .thenReturn(card);
+        when(paymentCardRepository.save(card))
+                .thenReturn(card);
+        when(paymentCardMapper.toDto(card))
+                .thenReturn(new PaymentCardResponseDto());
+
+        service.createPaymentCard(1L, new PaymentCardCreateDto());
+
+        assertFalse(card.getActive());
+    }
+
+    @Test
+    void getPaymentCardById_shouldThrowWhenInactive() {
+        PaymentCard card = new PaymentCard();
+        card.setActive(false);
+
+        when(paymentCardRepository.findById(1L))
+                .thenReturn(Optional.of(card));
+        assertThrows(
+                NotActiveException.class,
                 () -> service.getPaymentCardById(1L)
         );
     }

@@ -145,4 +145,69 @@ class UserServiceTest {
         assertFalse(user.getActive());
         assertFalse(card.getActive());
     }
+
+    @Test
+    void updateUser_shouldThrowWhenUserNotFound() {
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.empty());
+        assertThrows(
+                NotFoundException.class,
+                () -> userService.updateUser(1L, new UserRequestDto())
+        );
+    }
+
+    @Test
+    void updateUser_shouldUpdateCardHolder() {
+        PaymentCard card = new PaymentCard();
+        card.setHolder("Ivan Slesarenko");
+        User user = new User();
+        user.getPaymentCards().add(card);
+        UserRequestDto dto = new UserRequestDto();
+        dto.setName("Jan");
+        dto.setSurname("Slesarensky");
+        User mapped = new User();
+        mapped.setName("Jan");
+        mapped.setSurname("Slesarensky");
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+        when(userMapper.toEntity(dto))
+                .thenReturn(mapped);
+        when(userRepository.save(user))
+                .thenReturn(user);
+        when(userMapper.toDto(user))
+                .thenReturn(new UserResponseDto());
+
+        userService.updateUser(1L, dto);
+        assertEquals("Jan Slesarensky", card.getHolder());
+    }
+
+    @Test
+    void setUserActive_shouldThrowWhenUserNotFound() {
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.empty());
+        assertThrows(
+                NotFoundException.class,
+                () -> userService.setUserActive(1L, true)
+        );
+    }
+
+    @Test
+    void setUserActive_shouldActivateWithoutChangingCards() {
+        User user = new User();
+        user.setActive(false);
+        PaymentCard card = new PaymentCard();
+        card.setActive(false);
+        user.getPaymentCards().add(card);
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+        when(userRepository.save(user))
+                .thenReturn(user);
+        when(userMapper.toDto(user))
+                .thenReturn(new UserResponseDto());
+        userService.setUserActive(1L, true);
+        assertTrue(user.getActive());
+        assertFalse(card.getActive());
+    }
 }
