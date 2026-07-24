@@ -87,7 +87,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
           mvn -B -f userservice/pom.xml org.sonarsource.scanner.maven:sonar-maven-plugin:4.0.0.4121:sonar \
-            -Dsonar.projectKey=SLSRK_inno-internship-microservices \
+            -Dsonar.projectKey=SLSRK_inno-userservice \
             -Dsonar.organization=slsrk \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
