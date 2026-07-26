@@ -2,13 +2,11 @@ package com.innowise.userservice.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
@@ -29,30 +27,29 @@ public class IntegrationTestCommons {
     @Value("${user.cards.limit}")
     protected int userCardsLimit;
 
-    @Container
-    @ServiceConnection(name = "redis")
-    static GenericContainer<?> redis =
-            new GenericContainer<>("redis:7")
-                    .withExposedPorts(6379);
+    static final GenericContainer<?> redis;
+    static final PostgreSQLContainer<?> postgres;
 
-    @Container
-    @ServiceConnection
-    static PostgreSQLContainer<?> postgres =
-            new PostgreSQLContainer<>("postgres:16")
-                    .withDatabaseName("userservice")
-                    .withUsername("postgres")
-                    .withPassword("postgres");
+    static {
+        redis = new GenericContainer<>("redis:7")
+                .withExposedPorts(6379);
+        redis.start();
+
+        postgres = new PostgreSQLContainer<>("postgres:16")
+                .withDatabaseName("userservice")
+                .withUsername("postgres")
+                .withPassword("postgres");
+        postgres.start();
+    }
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
-        registry.add(
-                "spring.data.redis.host",
-                redis::getHost
-        );
-        registry.add(
-                "spring.data.redis.port",
-                () -> redis.getMappedPort(6379)
-        );
+        registry.add("spring.datasource.url", postgres::getJdbcUrl);
+        registry.add("spring.datasource.username", postgres::getUsername);
+        registry.add("spring.datasource.password", postgres::getPassword);
+
+        registry.add("spring.data.redis.host", redis::getHost);
+        registry.add("spring.data.redis.port", () -> redis.getMappedPort(6379));
     }
 
     protected Long createUser(String name, String surname) throws Exception {
