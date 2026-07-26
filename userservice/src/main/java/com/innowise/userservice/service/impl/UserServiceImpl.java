@@ -1,5 +1,6 @@
 package com.innowise.userservice.service.impl;
 
+import com.innowise.userservice.exception.AlreadyExistsException;
 import com.innowise.userservice.exception.NotActiveException;
 import com.innowise.userservice.exception.NotFoundException;
 import com.innowise.userservice.mapper.UserMapper;
@@ -11,6 +12,7 @@ import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.UserService;
 import com.innowise.userservice.specification.UserSpecification;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
@@ -20,6 +22,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -30,6 +33,9 @@ public class UserServiceImpl implements UserService {
 
     @Transactional
     public UserResponseDto createUser(UserRequestDto userRequestDto) {
+        if(checkEmailForExistence(userRequestDto.getEmail())) {
+            throw new AlreadyExistsException("This email is taken.");
+        }
         User user = userMapper.toEntity(userRequestDto);
         user.setActive(true);
         return userMapper.toDto(userRepository.save(user));
@@ -63,7 +69,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found."));
 
-        User newUser =  userMapper.toEntity(userRequestDto);
+        User newUser = userMapper.toEntity(userRequestDto);
 
         user.getPaymentCards().forEach(paymentCard ->
                 paymentCard.setHolder(newUser.getName() + " " + newUser.getSurname())
@@ -72,6 +78,9 @@ public class UserServiceImpl implements UserService {
         user.setName(newUser.getName());
         user.setSurname(newUser.getSurname());
         user.setBirthDate(newUser.getBirthDate());
+        if (!user.getEmail().equals(newUser.getEmail()) && checkEmailForExistence(userRequestDto.getEmail())) {
+            throw new AlreadyExistsException("This email is taken.");
+        }
         user.setEmail(newUser.getEmail());
 
         return userMapper.toDto(userRepository.save(user));
@@ -90,5 +99,9 @@ public class UserServiceImpl implements UserService {
                     );
         }
         return userMapper.toDto(userRepository.save(user));
+    }
+
+    private Boolean checkEmailForExistence(String email) {
+        return userRepository.findByEmail(email).isPresent();
     }
 }

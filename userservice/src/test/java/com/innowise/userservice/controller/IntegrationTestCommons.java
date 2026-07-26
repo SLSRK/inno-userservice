@@ -1,0 +1,107 @@
+package com.innowise.userservice.controller;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.http.MediaType;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.PostgreSQLContainer;
+import org.testcontainers.junit.jupiter.Container;
+import org.springframework.test.web.servlet.MockMvc;
+import tools.jackson.databind.ObjectMapper;
+
+import java.time.LocalDate;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+
+public class IntegrationTestCommons {
+
+    @Autowired
+    protected MockMvc mockMvc;
+
+    @Autowired
+    protected ObjectMapper objectMapper;
+
+    @Value("${user.cards.limit}")
+    protected int userCardsLimit;
+
+    @Container
+    @ServiceConnection(name = "redis")
+    static GenericContainer<?> redis =
+            new GenericContainer<>("redis:7")
+                    .withExposedPorts(6379);
+
+    @Container
+    @ServiceConnection
+    static PostgreSQLContainer<?> postgres =
+            new PostgreSQLContainer<>("postgres:16")
+                    .withDatabaseName("userservice")
+                    .withUsername("postgres")
+                    .withPassword("postgres");
+
+    @DynamicPropertySource
+    static void properties(DynamicPropertyRegistry registry) {
+        registry.add(
+                "spring.data.redis.host",
+                redis::getHost
+        );
+        registry.add(
+                "spring.data.redis.port",
+                () -> redis.getMappedPort(6379)
+        );
+    }
+
+    protected Long createUser(String name, String surname) throws Exception {
+        String email = UUID.randomUUID() + "@test.com";
+
+        String body = """
+                {
+                  "name": "%s",
+                  "surname": "%s",
+                  "birthDate": "2000-01-01",
+                  "email": "%s"
+                }
+                """.formatted(name, surname, email);
+
+        String response = mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    protected Long createCard(Long userId) throws Exception {
+        String number = createCardNumber();
+
+        String body = """
+                {
+                  "number": "%s",
+                  "expirationDate": "%s"
+                }
+                """.formatted(number, LocalDate.now().plusYears(2));
+
+        String response = mockMvc.perform(post("/api/users/{id}/cards", userId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return objectMapper.readTree(response).get("id").asLong();
+    }
+
+    protected String createCardNumber() {
+        StringBuilder sb = new StringBuilder(16);
+        for (int i = 0; i < 16; i++) {
+            sb.append(ThreadLocalRandom.current().nextInt(10));
+        }
+        return sb.toString();
+    }
+}

@@ -20,7 +20,7 @@
                 <constraints nullable="false"/>
             </column>
             <column name="email" type="VARCHAR(100)">
-                <constraints nullable="false"/>
+                <constraints nullable="false" unique="true"/>
             </column>
             <column name="active" type="BOOLEAN" defaultValueBoolean="true">
                 <constraints nullable="false"/>

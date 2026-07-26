@@ -1,4 +1,4 @@
-package com.innowise.userservice;
+package com.innowise.userservice.service;
 
 import com.innowise.userservice.exception.NotActiveException;
 import com.innowise.userservice.exception.NotFoundException;
@@ -27,7 +27,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class UserServiceTest {
+class UserUnitTest {
 
     @Mock
     private UserRepository userRepository;
@@ -43,10 +43,9 @@ class UserServiceTest {
         UserRequestDto userRequestDto = new UserRequestDto();
         userRequestDto.setName("Ivan");
         userRequestDto.setSurname("Slesarenko");
-        userRequestDto.setBirthDate(LocalDate.of(2001,06,25));
-
+        userRequestDto.setBirthDate(LocalDate.of(2001, 6, 25));
         User user = new User();
-        User saved = new User();
+        User saved = currentUser();
         UserResponseDto response = new UserResponseDto();
 
         when(userMapper.toEntity(userRequestDto)).thenReturn(user);
@@ -61,18 +60,16 @@ class UserServiceTest {
 
     @Test
     void getUserById_shouldReturnUser() {
-        User user = new User();
-        user.setActive(true);
+        User user = currentUser();
         UserResponseDto dto = new UserResponseDto();
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
-        when(userMapper.toDto(user))
-                .thenReturn(dto);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userMapper.toDto(user)).thenReturn(dto);
 
         UserResponseDto result = userService.getUserById(1L);
         assertEquals(dto, result);
     }
+
 
     @Test
     void getUserById_shouldThrowWhenNotFound() {
@@ -84,66 +81,34 @@ class UserServiceTest {
 
     @Test
     void getUserById_shouldThrowWhenInactive() {
-        User user = new User();
+        User user = currentUser();
         user.setActive(false);
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         assertThrows(NotActiveException.class,
                 () -> userService.getUserById(1L));
     }
 
     @Test
     void updateUser_shouldUpdateFields() {
-        User user = new User();
-        user.setName("Ivan");
-        user.setSurname("Slesarenko");
-        user.setPaymentCards(new ArrayList<>());
+        User user = currentUser();
 
         UserRequestDto userRequestDto = new UserRequestDto();
         userRequestDto.setName("Jan");
         userRequestDto.setSurname("Slesarensky");
         userRequestDto.setBirthDate(LocalDate.now());
-        userRequestDto.setEmail("ivan@anymail.com");
+        userRequestDto.setEmail(user.getEmail());
+        User newUser = newUser();
 
-        User newUser = new User();
-        newUser.setName("Jan");
-        newUser.setSurname("Slesarensky");
-        newUser.setBirthDate(userRequestDto.getBirthDate());
-        newUser.setEmail(userRequestDto.getEmail());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userMapper.toEntity(userRequestDto)).thenReturn(newUser);
+        when(userRepository.save(user)).thenReturn(user);
+        when(userMapper.toDto(user)).thenReturn(new UserResponseDto());
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
-        when(userMapper.toEntity(userRequestDto))
-                .thenReturn(newUser);
-        when(userRepository.save(user))
-                .thenReturn(user);
-        when(userMapper.toDto(user))
-                .thenReturn(new UserResponseDto());
         userService.updateUser(1L, userRequestDto);
 
         assertEquals("Jan", user.getName());
         assertEquals("Slesarensky", user.getSurname());
-    }
-
-    @Test
-    void setUserActive_shouldDisableCards() {
-        User user = new User();
-        user.setActive(true);
-        PaymentCard card = new PaymentCard();
-        card.setActive(true);
-        user.getPaymentCards().add(card);
-
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
-        when(userRepository.save(user))
-                .thenReturn(user);
-        when(userMapper.toDto(user))
-                .thenReturn(new UserResponseDto());
-
-        userService.setUserActive(1L,false);
-        assertFalse(user.getActive());
-        assertFalse(card.getActive());
     }
 
     @Test
@@ -157,29 +122,48 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUser_shouldUpdateCardHolder() {
-        PaymentCard card = new PaymentCard();
-        card.setHolder("Ivan Slesarenko");
+    void setUserActive_shouldDisableCards() {
         User user = new User();
-        user.getPaymentCards().add(card);
+        user.setActive(true);
+        PaymentCard paymentCard = new PaymentCard();
+        paymentCard.setActive(true);
+        user.getPaymentCards().add(paymentCard);
+
+        when(userRepository.findById(1L))
+                .thenReturn(Optional.of(user));
+        when(userRepository.save(user))
+                .thenReturn(user);
+        when(userMapper.toDto(user))
+                .thenReturn(new UserResponseDto());
+
+        userService.setUserActive(1L,false);
+        assertFalse(user.getActive());
+        assertFalse(paymentCard.getActive());
+    }
+
+    @Test
+    void updateUser_shouldUpdateCardHolder() {
+        PaymentCard paymentCard = new PaymentCard();
+        paymentCard.setHolder("Ivan Slesarenko");
+
+        User user = currentUser();
+        user.getPaymentCards().add(paymentCard);
         UserRequestDto dto = new UserRequestDto();
         dto.setName("Jan");
         dto.setSurname("Slesarensky");
-        User mapped = new User();
-        mapped.setName("Jan");
-        mapped.setSurname("Slesarensky");
+        User newUser = newUser();
 
         when(userRepository.findById(1L))
                 .thenReturn(Optional.of(user));
         when(userMapper.toEntity(dto))
-                .thenReturn(mapped);
+                .thenReturn(newUser);
         when(userRepository.save(user))
                 .thenReturn(user);
         when(userMapper.toDto(user))
                 .thenReturn(new UserResponseDto());
 
         userService.updateUser(1L, dto);
-        assertEquals("Jan Slesarensky", card.getHolder());
+        assertEquals("Jan Slesarensky", paymentCard.getHolder());
     }
 
     @Test
@@ -196,9 +180,9 @@ class UserServiceTest {
     void setUserActive_shouldActivateWithoutChangingCards() {
         User user = new User();
         user.setActive(false);
-        PaymentCard card = new PaymentCard();
-        card.setActive(false);
-        user.getPaymentCards().add(card);
+        PaymentCard paymentCard = new PaymentCard();
+        paymentCard.setActive(false);
+        user.getPaymentCards().add(paymentCard);
 
         when(userRepository.findById(1L))
                 .thenReturn(Optional.of(user));
@@ -208,6 +192,28 @@ class UserServiceTest {
                 .thenReturn(new UserResponseDto());
         userService.setUserActive(1L, true);
         assertTrue(user.getActive());
-        assertFalse(card.getActive());
+        assertFalse(paymentCard.getActive());
+    }
+
+    private User currentUser() {
+        User user = new User();
+        user.setName("Ivan");
+        user.setSurname("Slesarenko");
+        user.setEmail("ivan@anymail.com");
+        user.setBirthDate(LocalDate.of(2000, 1, 1));
+        user.setActive(true);
+        user.setPaymentCards(new ArrayList<>());
+        return user;
+    }
+
+    private User newUser() {
+        User user = new User();
+        user.setName("Jan");
+        user.setSurname("Slesarensky");
+        user.setEmail("jan@anymail.com");
+        user.setBirthDate(LocalDate.of(2000, 1, 1));
+        user.setActive(true);
+        user.setPaymentCards(new ArrayList<>());
+        return user;
     }
 }

@@ -1,5 +1,6 @@
 package com.innowise.userservice.service.impl;
 
+import com.innowise.userservice.exception.AlreadyExistsException;
 import com.innowise.userservice.exception.CardsQuantityException;
 import com.innowise.userservice.exception.NotActiveException;
 import com.innowise.userservice.exception.NotFoundException;
@@ -14,6 +15,7 @@ import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.PaymentCardService;
 import com.innowise.userservice.specification.PaymentCardSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
@@ -27,11 +29,14 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class PaymentCardImpl implements PaymentCardService {
+public class PaymentCardServiceImpl implements PaymentCardService {
 
     private final PaymentCardRepository paymentCardRepository;
     private final UserRepository userRepository;
     private final PaymentCardMapper paymentCardMapper;
+
+    @Value("${user.cards.limit}")
+    private int userCardsLimit;
 
     @Transactional
     @CacheEvict(value = "users", key = "#userId")
@@ -40,13 +45,17 @@ public class PaymentCardImpl implements PaymentCardService {
         User user = userRepository.findById(userId)
                         .orElseThrow(() -> new NotFoundException("User not found"));
 
-        if(user.getPaymentCards().size() >= 5) {
-            throw new CardsQuantityException("The user already has 5 cards");
+        if(user.getPaymentCards().size() >= userCardsLimit) {
+            throw new CardsQuantityException("The user already has maximum cards");
         }
-
         paymentCard.setUser(user);
         paymentCard.setHolder(user.getName() + " " + user.getSurname());
         paymentCard.setActive(user.getActive());
+
+        if(checkNumberForExistence(paymentCard.getNumber())) {
+            throw new AlreadyExistsException("This number is taken");
+        }
+
         return paymentCardMapper.toDto(paymentCardRepository.save(paymentCard));
     }
 
@@ -90,22 +99,25 @@ public class PaymentCardImpl implements PaymentCardService {
     @Transactional
     @Caching(evict = {
             @CacheEvict(value = "users", key = "#paymentCardUpdateDto.userId"),
-            @CacheEvict(value = "users", key = "#id")
+            @CacheEvict(value = "users", key = "#result.userId")
     })
     public PaymentCardResponseDto updatePaymentCard(Long id, PaymentCardUpdateDto paymentCardUpdateDto) {
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment card not found"));
 
-        if(paymentCardUpdateDto.getUserId() != paymentCard.getUser().getId()) {
+        if(!paymentCardUpdateDto.getUserId().equals(paymentCard.getUser().getId())) {
             User user = userRepository.findById(paymentCardUpdateDto.getUserId())
                     .orElseThrow(() -> new NotFoundException("User not found"));
-            if(user.getPaymentCards().size() >= 5) {
-                throw new CardsQuantityException("The user already has 5 cards");
+            if(user.getPaymentCards().size() >= userCardsLimit) {
+                throw new CardsQuantityException("The user already has maximum cards");
             }
             paymentCard.setUser(user);
             paymentCard.setHolder(user.getName() + " " + user.getSurname());
         }
         PaymentCard newPaymentCard = paymentCardMapper.toEntity(paymentCardUpdateDto);
+        if(!paymentCard.getNumber().equals(newPaymentCard.getNumber()) && checkNumberForExistence(newPaymentCard.getNumber())) {
+            throw new AlreadyExistsException("This number is taken");
+        }
         paymentCard.setNumber(newPaymentCard.getNumber());
         paymentCard.setExpirationDate(newPaymentCard.getExpirationDate());
 
@@ -124,5 +136,9 @@ public class PaymentCardImpl implements PaymentCardService {
 
         paymentCard.setActive(isActive);
         return paymentCardMapper.toDto(paymentCardRepository.save(paymentCard));
+    }
+
+    private Boolean checkNumberForExistence(String number) {
+        return paymentCardRepository.findByNumber(number).isPresent();
     }
 }

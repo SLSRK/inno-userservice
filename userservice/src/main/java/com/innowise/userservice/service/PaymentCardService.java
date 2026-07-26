@@ -30,7 +30,7 @@ public interface PaymentCardService {
      * Retrieves a paginated list of payment cards with optional filtering;
      *
      * @param holder optional cardholder name to filter results;
-     * @param page optional flag to filter cards by active status;
+     * @param page a number of page with records, that will be returned;
      * @param size the number of records per page (must be > 0);
      * @return the cards, that that match the given criteria.
      */
