@@ -7,7 +7,6 @@ import com.innowise.userservice.mapper.UserMapper;
 import com.innowise.userservice.model.dto.UserRequestDto;
 import com.innowise.userservice.model.dto.UserResponseDto;
 import com.innowise.userservice.model.entity.User;
-import com.innowise.userservice.repository.PaymentCardRepository;
 import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.UserService;
 import com.innowise.userservice.specification.UserSpecification;
@@ -28,21 +27,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final PaymentCardRepository paymentCardRepository;
     private final UserMapper userMapper;
 
     @Transactional
     public UserResponseDto createUser(UserRequestDto userRequestDto) {
+        log.debug("Creating a new user.");
         if(checkEmailForExistence(userRequestDto.getEmail())) {
             throw new AlreadyExistsException("This email is taken.");
         }
         User user = userMapper.toEntity(userRequestDto);
         user.setActive(true);
+        log.debug("The data is valid, the user is about to be created...");
         return userMapper.toDto(userRepository.save(user));
     }
 
     @Cacheable(value = "users", key = "#id")
     public UserResponseDto getUserById(Long id) {
+        log.debug("Getting the user with id:{}", id);
         User user = userRepository.findById(id).orElseThrow(() -> new NotFoundException("User not found."));
 
         if(!user.getActive()) {
@@ -53,6 +54,7 @@ public class UserServiceImpl implements UserService {
     }
 
     public Page<UserResponseDto> getAllUsers(String name, String surname, int page, int size) {
+        log.debug("Getting the users who match the given criteria");
         Pageable pageable = PageRequest.of(page, size);
 
         Specification<User> spec = Specification
@@ -66,6 +68,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     @CacheEvict(value = "users", key = "#id")
     public UserResponseDto updateUser(Long id, UserRequestDto userRequestDto) {
+        log.debug("Updating the user with the id:{}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found."));
 
@@ -83,12 +86,14 @@ public class UserServiceImpl implements UserService {
         }
         user.setEmail(newUser.getEmail());
 
+        log.debug("The data is valid, the user is about to be updated...");
         return userMapper.toDto(userRepository.save(user));
     }
 
     @Transactional
     @CacheEvict(value = "users", key = "#id")
     public UserResponseDto setUserActive(Long id, Boolean isActive) {
+        log.debug("Changing the state of user with the id:{}", id);
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found."));
 
@@ -98,6 +103,7 @@ public class UserServiceImpl implements UserService {
                     paymentCard.setActive(false)
                     );
         }
+        log.debug("The activity of the user is about to be changed...");
         return userMapper.toDto(userRepository.save(user));
     }
 

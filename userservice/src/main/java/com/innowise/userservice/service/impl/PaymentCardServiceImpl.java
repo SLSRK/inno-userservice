@@ -15,6 +15,7 @@ import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.PaymentCardService;
 import com.innowise.userservice.specification.PaymentCardSpecification;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Caching;
@@ -27,6 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class PaymentCardServiceImpl implements PaymentCardService {
@@ -41,25 +43,21 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     @Transactional
     @CacheEvict(value = "users", key = "#userId")
     public PaymentCardResponseDto createPaymentCard(Long userId, PaymentCardCreateDto paymentCardCreateDto) {
+        log.debug("Creating a new card.");
         PaymentCard paymentCard = paymentCardMapper.toEntityWithUser(paymentCardCreateDto);
-        User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new NotFoundException("User not found"));
-
-        if(user.getPaymentCards().size() >= userCardsLimit) {
-            throw new CardsQuantityException("The user already has maximum cards");
-        }
-        paymentCard.setUser(user);
-        paymentCard.setHolder(user.getName() + " " + user.getSurname());
-        paymentCard.setActive(user.getActive());
+        setUserInfo(paymentCard, userId);
+        paymentCard.setActive(paymentCard.getUser().getActive());
 
         if(checkNumberForExistence(paymentCard.getNumber())) {
             throw new AlreadyExistsException("This number is taken");
         }
 
+        log.debug("The data is valid, the card is about to be created...");
         return paymentCardMapper.toDto(paymentCardRepository.save(paymentCard));
     }
 
     public PaymentCardResponseDto getPaymentCardById(Long id) {
+        log.debug("Getting the card with id:{}", id);
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment card not found"));
 
@@ -74,7 +72,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
             int page,
             int size
     ) {
-
+        log.debug("Getting the cards that match the given criteria");
         Pageable pageable = PageRequest.of(page, size);
 
         Specification<PaymentCard> spec = Specification
@@ -85,7 +83,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     }
 
     public List<PaymentCardResponseDto> getAllPaymentCardsByUserId(Long userId) {
-
+        log.debug("Getting the cards, owned by user id:{}", userId);
         List<PaymentCard> paymentCards = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException("User not found"))
                 .getPaymentCards();
@@ -102,17 +100,12 @@ public class PaymentCardServiceImpl implements PaymentCardService {
             @CacheEvict(value = "users", key = "#result.userId")
     })
     public PaymentCardResponseDto updatePaymentCard(Long id, PaymentCardUpdateDto paymentCardUpdateDto) {
+        log.debug("Updating the card with the id:{}", id);
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment card not found"));
 
         if(!paymentCardUpdateDto.getUserId().equals(paymentCard.getUser().getId())) {
-            User user = userRepository.findById(paymentCardUpdateDto.getUserId())
-                    .orElseThrow(() -> new NotFoundException("User not found"));
-            if(user.getPaymentCards().size() >= userCardsLimit) {
-                throw new CardsQuantityException("The user already has maximum cards");
-            }
-            paymentCard.setUser(user);
-            paymentCard.setHolder(user.getName() + " " + user.getSurname());
+            setUserInfo(paymentCard, paymentCardUpdateDto.getUserId());
         }
         PaymentCard newPaymentCard = paymentCardMapper.toEntity(paymentCardUpdateDto);
         if(!paymentCard.getNumber().equals(newPaymentCard.getNumber()) && checkNumberForExistence(newPaymentCard.getNumber())) {
@@ -121,12 +114,14 @@ public class PaymentCardServiceImpl implements PaymentCardService {
         paymentCard.setNumber(newPaymentCard.getNumber());
         paymentCard.setExpirationDate(newPaymentCard.getExpirationDate());
 
+        log.debug("The data is valid, the card is about to be updated...");
         return paymentCardMapper.toDto(paymentCardRepository.save(paymentCard));
     }
 
     @Transactional
     @CacheEvict(value = "users", key = "#result.userId")
     public PaymentCardResponseDto setPaymentCardActive(Long id, Boolean isActive){
+        log.debug("Changing the state of card with the id:{}", id);
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment card not found"));
 
@@ -135,7 +130,19 @@ public class PaymentCardServiceImpl implements PaymentCardService {
         }
 
         paymentCard.setActive(isActive);
+        log.debug("The activity of the card is about to be changed...");
         return paymentCardMapper.toDto(paymentCardRepository.save(paymentCard));
+    }
+
+    private void setUserInfo(PaymentCard paymentCard, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        if(paymentCardRepository.countByUserId(user.getId()) >= userCardsLimit) {
+            throw new CardsQuantityException("The user already has maximum cards");
+        }
+        paymentCard.setUser(user);
+        paymentCard.setHolder(user.getName() + " " + user.getSurname());
+        log.debug("Holder info has been successfully filled in");
     }
 
     private Boolean checkNumberForExistence(String number) {

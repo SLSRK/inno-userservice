@@ -18,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDate;
@@ -47,12 +46,11 @@ class PaymentCardUnitTest {
     @InjectMocks
     PaymentCardServiceImpl paymentCardService;
 
-    @Value("${user.cards.limit}")
-    private int userCardsLimit;
+    private static final Integer USER_CARD_LIMIT = 5;
 
     @BeforeEach
     public void setUp() {
-        ReflectionTestUtils.setField(paymentCardService, "userCardsLimit", 5);
+        ReflectionTestUtils.setField(paymentCardService, "userCardsLimit", USER_CARD_LIMIT);
     }
 
     @Test
@@ -82,16 +80,12 @@ class PaymentCardUnitTest {
 
     @Test
     void createPaymentCard_shouldThrowWhenFiveCards() {
-        int limit = 5;
-        ReflectionTestUtils.setField(paymentCardService, "userCardsLimit", limit);
-
         User user = currentUser();
-        for(int i = 0; i < limit; i++) {
-            user.getPaymentCards().add(new PaymentCard());
-        }
 
         when(userRepository.findById(1L))
                 .thenReturn(Optional.of(user));
+        when(paymentCardRepository.countByUserId(1L))
+                .thenReturn((long) USER_CARD_LIMIT);
         when(paymentCardMapper.toEntityWithUser(any()))
                 .thenReturn(new PaymentCard());
         assertThrows(
@@ -245,6 +239,7 @@ class PaymentCardUnitTest {
 
     private User currentUser() {
         User user = new User();
+        user.setId(1L);
         user.setName("Ivan");
         user.setSurname("Slesarenko");
         user.setActive(true);

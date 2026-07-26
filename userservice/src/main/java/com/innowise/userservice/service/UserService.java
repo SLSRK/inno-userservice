@@ -29,7 +29,7 @@ public interface UserService {
      * @param surname optional surname to filter results;
      * @param page a number of page with records, that will be returned;
      * @param size the number of records per page (must be > 0);
-     * @return the users, that who match the given criteria.
+     * @return the users, who match the given criteria.
      */
     Page<UserResponseDto> getAllUsers(String name, String surname, int page, int size);
 

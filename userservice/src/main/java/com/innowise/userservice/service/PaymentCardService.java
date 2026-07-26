@@ -32,7 +32,7 @@ public interface PaymentCardService {
      * @param holder optional cardholder name to filter results;
      * @param page a number of page with records, that will be returned;
      * @param size the number of records per page (must be > 0);
-     * @return the cards, that that match the given criteria.
+     * @return the cards, that match the given criteria.
      */
     Page<PaymentCardResponseDto> getAllPaymentCards(
             String holder,
