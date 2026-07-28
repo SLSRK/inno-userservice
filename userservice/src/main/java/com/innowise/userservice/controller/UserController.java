@@ -9,6 +9,7 @@ import com.innowise.userservice.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -32,7 +33,8 @@ public class UserController {
 
     @PostMapping
     public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserRequestDto userRequestDto) {
-        return ResponseEntity.ok(userService.createUser(userRequestDto));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(userService.createUser(userRequestDto));
     }
 
     @GetMapping("/{id}")
@@ -64,7 +66,8 @@ public class UserController {
     @PostMapping("{userId}/cards")
     public ResponseEntity<PaymentCardResponseDto> createPaymentCard(@PathVariable Long userId,
                                                                     @Valid @RequestBody PaymentCardCreateDto paymentCardCreateDto) {
-        return ResponseEntity.ok(paymentCardService.createPaymentCard(userId,paymentCardCreateDto));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(paymentCardService.createPaymentCard(userId,paymentCardCreateDto));
     }
 
     @GetMapping("{userId}/cards")

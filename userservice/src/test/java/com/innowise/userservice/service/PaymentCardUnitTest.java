@@ -10,7 +10,6 @@ import com.innowise.userservice.model.dto.PaymentCardUpdateDto;
 import com.innowise.userservice.model.entity.PaymentCard;
 import com.innowise.userservice.model.entity.User;
 import com.innowise.userservice.repository.PaymentCardRepository;
-import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.impl.PaymentCardServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -38,7 +37,7 @@ class PaymentCardUnitTest {
     PaymentCardRepository paymentCardRepository;
 
     @Mock
-    UserRepository userRepository;
+    UserService userService;
 
     @Mock
     PaymentCardMapper paymentCardMapper;
@@ -59,8 +58,8 @@ class PaymentCardUnitTest {
         PaymentCard paymentCard = new PaymentCard();
         PaymentCardResponseDto dto = new PaymentCardResponseDto();
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(userService.getUserEntityById(1L))
+                .thenReturn(user);
         when(paymentCardMapper.toEntityWithUser(any()))
                 .thenReturn(paymentCard);
         when(paymentCardRepository.save(paymentCard))
@@ -82,8 +81,8 @@ class PaymentCardUnitTest {
     void createPaymentCard_shouldThrowWhenFiveCards() {
         User user = currentUser();
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(userService.getUserEntityById(1L))
+                .thenReturn(user);
         when(paymentCardRepository.countByUserId(1L))
                 .thenReturn((long) USER_CARD_LIMIT);
         when(paymentCardMapper.toEntityWithUser(any()))
@@ -99,8 +98,8 @@ class PaymentCardUnitTest {
 
     @Test
     void createPaymentCard_shouldThrowWhenUserNotFound() {
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.empty());
+        when(userService.getUserEntityById(1L))
+                .thenThrow(new NotFoundException("User not found."));
         assertThrows(
                 NotFoundException.class,
                 () -> paymentCardService.createPaymentCard(
@@ -117,8 +116,8 @@ class PaymentCardUnitTest {
 
         PaymentCard paymentCard = new PaymentCard();
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(userService.getUserEntityById(1L))
+                .thenReturn(user);
         when(paymentCardMapper.toEntityWithUser(any()))
                 .thenReturn(paymentCard);
         when(paymentCardRepository.save(paymentCard))
@@ -226,8 +225,8 @@ class PaymentCardUnitTest {
         inactiveCard.setActive(false);
         user.setPaymentCards(List.of(activeCard, inactiveCard));
 
-        when(userRepository.findById(1L))
-                .thenReturn(Optional.of(user));
+        when(userService.getUserEntityById(1L))
+                .thenReturn(user);
         when(paymentCardMapper.toDto(activeCard))
                 .thenReturn(new PaymentCardResponseDto());
 

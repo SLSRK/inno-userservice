@@ -36,16 +36,16 @@ public class PaymentCard {
     @ToString.Exclude
     private User user;
 
-    @Column(nullable = false, unique = true, length = 16)
+    @Column(name = "number", nullable = false, unique = true, length = 16)
     private String number;
 
-    @Column(nullable = false)
+    @Column(name = "holder", nullable = false)
     private String holder;
 
     @Column(name = "expiration_date", nullable = false)
     private LocalDate expirationDate;
 
-    @Column(nullable = false)
+    @Column(name = "active", nullable = false)
     private Boolean active;
 
     @CreatedDate

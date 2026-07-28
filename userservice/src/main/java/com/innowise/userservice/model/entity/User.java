@@ -32,19 +32,19 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(nullable = false)
+    @Column(name = "surname", nullable = false)
     private String surname;
 
     @Column(name = "birth_date", nullable = false)
     private LocalDate birthDate;
 
-    @Column(nullable = false)
+    @Column(name = "email", nullable = false)
     private String email;
 
-    @Column(nullable = false)
+    @Column(name = "active", nullable = false)
     private Boolean active;
 
     @CreatedDate

@@ -1,6 +1,7 @@
 package com.innowise.userservice.model.dto;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -8,7 +9,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 public class UserResponseDto implements Serializable {
 
     private static final long serialVersionUID = 1L;

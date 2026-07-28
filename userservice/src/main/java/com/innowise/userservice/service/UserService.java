@@ -2,6 +2,7 @@ package com.innowise.userservice.service;
 
 import com.innowise.userservice.model.dto.UserRequestDto;
 import com.innowise.userservice.model.dto.UserResponseDto;
+import com.innowise.userservice.model.entity.User;
 import org.springframework.data.domain.Page;
 
 public interface UserService {
@@ -21,6 +22,14 @@ public interface UserService {
      * @return returns the user if it exists.
      */
     UserResponseDto getUserById(Long id);
+
+    /**
+     * Get an existing user entity by ID;
+     *
+     * @param id ID of the user to get;
+     * @return returns the user entity if it exists.
+     */
+    User getUserEntityById(Long id);
 
     /**
      * Retrieves a paginated list of users with optional filtering;

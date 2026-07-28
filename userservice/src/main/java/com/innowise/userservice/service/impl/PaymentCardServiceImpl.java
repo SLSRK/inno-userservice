@@ -11,8 +11,8 @@ import com.innowise.userservice.model.dto.PaymentCardResponseDto;
 import com.innowise.userservice.model.entity.PaymentCard;
 import com.innowise.userservice.model.entity.User;
 import com.innowise.userservice.repository.PaymentCardRepository;
-import com.innowise.userservice.repository.UserRepository;
 import com.innowise.userservice.service.PaymentCardService;
+import com.innowise.userservice.service.UserService;
 import com.innowise.userservice.specification.PaymentCardSpecification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +34,7 @@ import java.util.List;
 public class PaymentCardServiceImpl implements PaymentCardService {
 
     private final PaymentCardRepository paymentCardRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final PaymentCardMapper paymentCardMapper;
 
     @Value("${user.cards.limit}")
@@ -43,7 +43,10 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     @Transactional
     @CacheEvict(value = "users", key = "#userId")
     public PaymentCardResponseDto createPaymentCard(Long userId, PaymentCardCreateDto paymentCardCreateDto) {
-        log.debug("Creating a new card.");
+        log.debug("Creating a new card for user with id={}, with: number={}, expiration_date={}",
+                userId,
+                paymentCardCreateDto.getNumber(),
+                paymentCardCreateDto.getExpirationDate());
         PaymentCard paymentCard = paymentCardMapper.toEntityWithUser(paymentCardCreateDto);
         setUserInfo(paymentCard, userId);
         paymentCard.setActive(paymentCard.getUser().getActive());
@@ -57,7 +60,6 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     }
 
     public PaymentCardResponseDto getPaymentCardById(Long id) {
-        log.debug("Getting the card with id:{}", id);
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment card not found"));
 
@@ -83,9 +85,7 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     }
 
     public List<PaymentCardResponseDto> getAllPaymentCardsByUserId(Long userId) {
-        log.debug("Getting the cards, owned by user id:{}", userId);
-        List<PaymentCard> paymentCards = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"))
+        List<PaymentCard> paymentCards = userService.getUserEntityById(userId)
                 .getPaymentCards();
 
         return paymentCards.stream()
@@ -100,7 +100,11 @@ public class PaymentCardServiceImpl implements PaymentCardService {
             @CacheEvict(value = "users", key = "#result.userId")
     })
     public PaymentCardResponseDto updatePaymentCard(Long id, PaymentCardUpdateDto paymentCardUpdateDto) {
-        log.debug("Updating the card with the id:{}", id);
+        log.debug("Updating the card with the id={}, with data: number={}, expiration_date={}, user_id={}",
+                id,
+                paymentCardUpdateDto.getNumber(),
+                paymentCardUpdateDto.getExpirationDate(),
+                paymentCardUpdateDto.getUserId());
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment card not found"));
 
@@ -121,7 +125,9 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     @Transactional
     @CacheEvict(value = "users", key = "#result.userId")
     public PaymentCardResponseDto setPaymentCardActive(Long id, Boolean isActive){
-        log.debug("Changing the state of card with the id:{}", id);
+        log.debug("Changing the state of card with the id={}, to activity status={}",
+                id,
+                isActive);
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment card not found"));
 
@@ -135,14 +141,15 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     }
 
     private void setUserInfo(PaymentCard paymentCard, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException("User not found"));
+        User user = userService.getUserEntityById(userId);
         if(paymentCardRepository.countByUserId(user.getId()) >= userCardsLimit) {
             throw new CardsQuantityException("The user already has maximum cards");
         }
         paymentCard.setUser(user);
         paymentCard.setHolder(user.getName() + " " + user.getSurname());
-        log.debug("Holder info has been successfully filled in");
+        log.debug("Holder info of a card with the id={}, is: holder={}",
+                paymentCard.getId(),
+                paymentCard.getHolder());
     }
 
     private Boolean checkNumberForExistence(String number) {
