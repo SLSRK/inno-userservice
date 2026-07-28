@@ -1,5 +1,8 @@
 package com.innowise.userservice.controller;
 
+import com.innowise.userservice.repository.PaymentCardRepository;
+import com.innowise.userservice.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
@@ -24,6 +27,12 @@ public class IntegrationTestCommons {
     @Autowired
     protected ObjectMapper objectMapper;
 
+    @Autowired
+    private PaymentCardRepository paymentCardRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
     @Value("${user.cards.limit}")
     protected int userCardsLimit;
 
@@ -40,6 +49,12 @@ public class IntegrationTestCommons {
                 .withUsername("postgres")
                 .withPassword("postgres");
         postgres.start();
+    }
+
+    @AfterEach
+    void cleanDatabase() {
+        paymentCardRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @DynamicPropertySource
