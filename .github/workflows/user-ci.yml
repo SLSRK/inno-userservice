@@ -3,7 +3,7 @@ name: CI Pipeline (userservice)
 on:
   push:
     branches:
-      - usr-0/epic
+      - usr-1/epic
 
 jobs:
   build:

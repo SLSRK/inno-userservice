@@ -20,7 +20,7 @@ public class JwtServiceImpl implements JwtService {
         this.secretKey = Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public Claims validate(String token){
+    private Claims validate(String token){
         return Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
