@@ -5,6 +5,8 @@ services:
     container_name: userservice
     ports:
       - "8081:8080"
+    networks:
+      - app-network
     environment:
       SPRING_PROFILES_ACTIVE: docker
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
@@ -12,6 +14,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_REDIS_HOST: ${REDIS_HOST}
       SPRING_REDIS_PORT: ${REDIS_PORT}
+      JWT_SECRET: ${JWT_SECRET}
     depends_on:
       - user-db
       - redis
@@ -26,6 +29,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5432:5432"
+    networks:
+      - app-network
     volumes:
       - user_db_data:/var/lib/postgresql/data
 
@@ -35,6 +40,12 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    networks:
+      - app-network
 
 volumes:
   user_db_data:
+
+networks:
+  app-network:
+    external: true

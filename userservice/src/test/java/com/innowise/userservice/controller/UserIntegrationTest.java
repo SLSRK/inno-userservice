@@ -24,7 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(classes = UserserviceApplication.class)
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 class UserIntegrationTest extends IntegrationTestCommons {
 
     private static final String NAME = "Ivan";
@@ -46,7 +46,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         String response = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userRequestDto)))
+                        .content(objectMapper.writeValueAsString(userRequestDto))
+                        .with(admin()))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -71,7 +72,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userRequestDto)))
+                        .content(objectMapper.writeValueAsString(userRequestDto))
+                        .with(admin()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.name").exists());
     }
@@ -86,7 +88,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userRequestDto)))
+                        .content(objectMapper.writeValueAsString(userRequestDto))
+                        .with(admin()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.email").exists());
     }
@@ -101,7 +104,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userRequestDto)))
+                        .content(objectMapper.writeValueAsString(userRequestDto))
+                        .with(admin()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.birthDate").exists());
     }
@@ -110,7 +114,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void getUserById_shouldReturnUser_whenExists() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        String response = mockMvc.perform(get("/api/users/{id}", userId))
+        String response = mockMvc.perform(get("/api/users/{id}", userId).with(admin()))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -124,7 +128,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
     @Test
     void getUserById_shouldReturnNotFound_whenUserDoesNotExist() throws Exception {
-        mockMvc.perform(get("/api/users/{id}", 999_999_999L))
+        mockMvc.perform(get("/api/users/{id}", NON_EXISTENT_ID).with(admin()))
                 .andExpect(status().isNotFound());
     }
 
@@ -134,7 +138,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         mockMvc.perform(patch("/api/users/{id}/status", userId).param("isActive", "false"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/users/{id}", userId))
+        mockMvc.perform(get("/api/users/{id}", userId).with(admin()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -144,7 +148,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         mockMvc.perform(get("/api/users")
                         .param("name", NEW_NAME)
-                        .param("surname", NEW_SURNAME))
+                        .param("surname", NEW_SURNAME)
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(userId));
@@ -153,7 +158,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
     @Test
     void getAllUsers_shouldReturnEmptyPage_whenNoMatch() throws Exception {
         mockMvc.perform(get("/api/users")
-                        .param("name", "definitely-not-existing-" + UUID.randomUUID()))
+                        .param("name", "definitely-not-existing-" + UUID.randomUUID())
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(0));
     }
@@ -170,7 +176,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         String response = mockMvc.perform(put("/api/users/{id}", userId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userRequestDto)))
+                        .content(objectMapper.writeValueAsString(userRequestDto))
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -190,9 +197,10 @@ class UserIntegrationTest extends IntegrationTestCommons {
         userRequestDto.setBirthDate(NEW_BIRTH_DATE);
         userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
 
-        mockMvc.perform(put("/api/users/{id}", 999_999_999L)
+        mockMvc.perform(put("/api/users/{id}", NON_EXISTENT_ID)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userRequestDto)))
+                        .content(objectMapper.writeValueAsString(userRequestDto))
+                        .with(admin()))
                 .andExpect(status().isNotFound());
     }
 
@@ -200,7 +208,9 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void setUserActive_shouldDeactivateUser() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        String response = mockMvc.perform(patch("/api/users/{id}/status", userId).param("isActive", "false"))
+        String response = mockMvc.perform(patch("/api/users/{id}/status", userId)
+                        .param("isActive", "false")
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -214,10 +224,14 @@ class UserIntegrationTest extends IntegrationTestCommons {
     @Test
     void setUserActive_shouldReactivateUser() throws Exception {
         Long userId = createUser(NAME, SURNAME);
-        mockMvc.perform(patch("/api/users/{id}/status", userId).param("isActive", "false"))
+        mockMvc.perform(patch("/api/users/{id}/status", userId)
+                        .param("isActive", "false")
+                        .with(admin()))
                 .andExpect(status().isOk());
 
-        String response = mockMvc.perform(patch("/api/users/{id}/status", userId).param("isActive", "true"))
+        String response = mockMvc.perform(patch("/api/users/{id}/status", userId)
+                        .param("isActive", "true")
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -238,7 +252,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         String response = mockMvc.perform(post("/api/users/{id}/cards", userId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardCreateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardCreateDto))
+                        .with(admin()))
                 .andExpect(status().isCreated())
                 .andReturn()
                 .getResponse()
@@ -260,7 +275,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         mockMvc.perform(post("/api/users/{id}/cards", userId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardCreateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardCreateDto))
+                        .with(admin()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.number").exists());
     }
@@ -275,7 +291,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         mockMvc.perform(post("/api/users/{id}/cards", userId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardCreateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardCreateDto))
+                        .with(admin()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.expirationDate").exists());
     }
@@ -292,12 +309,14 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         mockMvc.perform(post("/api/users/{id}/cards", firstHolder)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardCreateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardCreateDto))
+                        .with(admin()))
                 .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/users/{id}/cards", secondHolder)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardCreateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardCreateDto))
+                        .with(admin()))
                 .andExpect(status().isConflict());
     }
 
@@ -314,7 +333,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         mockMvc.perform(post("/api/users/{id}/cards", userId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(limitPlusOneDto)))
+                        .content(objectMapper.writeValueAsString(limitPlusOneDto))
+                        .with(admin()))
                 .andExpect(status().isConflict());
     }
 
@@ -324,7 +344,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         createCard(userId);
         createCard(userId);
 
-        mockMvc.perform(get("/api/users/{id}/cards", userId))
+        mockMvc.perform(get("/api/users/{id}/cards", userId).with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }
@@ -333,14 +353,14 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void getAllPaymentCardsByUserId_shouldReturnEmptyList_whenUserHasNoCards() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        mockMvc.perform(get("/api/users/{id}/cards", userId))
+        mockMvc.perform(get("/api/users/{id}/cards", userId).with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
     void getAllPaymentCardsByUserId_shouldReturnNotFound_whenUserDoesNotExist() throws Exception {
-        mockMvc.perform(get("/api/users/{id}/cards", NON_EXISTENT_ID))
+        mockMvc.perform(get("/api/users/{id}/cards", NON_EXISTENT_ID).with(admin()))
                 .andExpect(status().isNotFound());
     }
 }

@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest(classes = UserserviceApplication.class)
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 public class PaymentCardIntegrationTest extends IntegrationTestCommons{
 
     private static final String NAME = "Ivan";
@@ -31,7 +31,8 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
         Long userId = createUser(NAME, SURNAME);
         Long cardId = createCard(userId);
 
-        mockMvc.perform(get("/api/cards/{cardId}", cardId))
+        mockMvc.perform(get("/api/cards/{cardId}", cardId)
+                .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(cardId))
                 .andExpect(jsonPath("$.userId").value(userId));
@@ -39,7 +40,7 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
 
     @Test
     void getPaymentCardById_shouldReturnNotFound_whenCardDoesNotExist() throws Exception {
-        mockMvc.perform(get("/api/cards/{cardId}", NON_EXISTENT_ID))
+        mockMvc.perform(get("/api/cards/{cardId}", NON_EXISTENT_ID).with(admin()))
                 .andExpect(status().isNotFound());
     }
 
@@ -48,10 +49,11 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
         Long userId = createUser(NAME, SURNAME);
         Long cardId = createCard(userId);
 
-        mockMvc.perform(patch("/api/cards/{cardId}", cardId).param("isActive", "false"))
+        mockMvc.perform(patch("/api/cards/{cardId}", cardId).param("isActive", "false")
+                        .with(admin()))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/cards/{cardId}", cardId))
+        mockMvc.perform(get("/api/cards/{cardId}", cardId).with(admin()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -60,7 +62,7 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
         Long userId = createUser(NAME, SURNAME);
         Long cardId = createCard(userId);
 
-        mockMvc.perform(get("/api/cards").param("holder", NAME))
+        mockMvc.perform(get("/api/cards").param("holder", NAME).with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(cardId));
@@ -69,7 +71,8 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
     @Test
     void getAllPaymentCards_shouldReturnEmptyPage_whenNoMatch() throws Exception {
         mockMvc.perform(get("/api/cards")
-                        .param("holder", "definitely-not-existing-" + UUID.randomUUID()))
+                        .param("holder", "definitely-not-existing-" + UUID.randomUUID())
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(0));
     }
@@ -86,7 +89,8 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
 
         mockMvc.perform(put("/api/cards/{cardId}", cardId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto))
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.number").value(paymentCardUpdateDto.getNumber()))
                 .andExpect(jsonPath("$.userId").value(userId));
@@ -105,7 +109,8 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
 
         mockMvc.perform(put("/api/cards/{cardId}", cardId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto))
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(newOwner))
                 .andExpect(jsonPath("$.holder").value(NEW_NAME + " " + NEW_SURNAME));
@@ -127,7 +132,8 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
 
         mockMvc.perform(put("/api/cards/{cardId}", cardId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto))
+                        .with(admin()))
                 .andExpect(status().isConflict());
     }
 
@@ -143,7 +149,8 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
 
         mockMvc.perform(put("/api/cards/{cardId}", cardId)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto))
+                        .with(admin()))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.expirationDate").exists());
     }
@@ -159,7 +166,8 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
 
         mockMvc.perform(put("/api/cards/{cardId}", NON_EXISTENT_ID)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto)))
+                        .content(objectMapper.writeValueAsString(paymentCardUpdateDto))
+                        .with(admin()))
                 .andExpect(status().isNotFound());
     }
 
@@ -168,7 +176,8 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
         Long userId = createUser(NAME, SURNAME);
         Long cardId = createCard(userId);
 
-        mockMvc.perform(patch("/api/cards/{cardId}", cardId).param("isActive", "false"))
+        mockMvc.perform(patch("/api/cards/{cardId}", cardId).param("isActive", "false")
+                        .with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.active").value(false));
     }
@@ -178,15 +187,18 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
         Long userId = createUser(NAME, SURNAME);
         Long cardId = createCard(userId);
 
-        mockMvc.perform(patch("/api/users/{id}/status", userId).param("isActive", "false"))
+        mockMvc.perform(patch("/api/users/{id}/status", userId).param("isActive", "false")
+                        .with(admin()))
                 .andExpect(status().isOk());
-        mockMvc.perform(patch("/api/cards/{cardId}", cardId).param("isActive", "true"))
+        mockMvc.perform(patch("/api/cards/{cardId}", cardId).param("isActive", "true")
+                        .with(admin()))
                 .andExpect(status().isBadRequest());
     }
 
     @Test
     void setPaymentCardActive_shouldReturnNotFound_whenCardDoesNotExist() throws Exception {
-        mockMvc.perform(patch("/api/cards/{cardId}", NON_EXISTENT_ID).param("isActive", "true"))
+        mockMvc.perform(patch("/api/cards/{cardId}", NON_EXISTENT_ID).param("isActive", "true")
+                        .with(admin()))
                 .andExpect(status().isNotFound());
     }
 }

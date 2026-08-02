@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,11 +25,13 @@ public class PaymentCardController {
     private final PaymentCardService paymentCardService;
 
     @GetMapping("/{cardId}")
+    @PreAuthorize("hasAnyAuthority('USER','ADMIN')")
     public ResponseEntity<PaymentCardResponseDto> getPaymentCardById(@PathVariable Long cardId) {
         return ResponseEntity.ok(paymentCardService.getPaymentCardById(cardId));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<Page<PaymentCardResponseDto>> getAllPaymentCards (
             @RequestParam(required = false) String holder,
             @RequestParam(defaultValue = "0") int page,
@@ -37,12 +40,14 @@ public class PaymentCardController {
     }
 
     @PutMapping("/{cardId}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<PaymentCardResponseDto> updatePaymentCard(@PathVariable Long cardId,
                                                                     @Valid @RequestBody PaymentCardUpdateDto paymentCardUpdateDto) {
         return ResponseEntity.ok(paymentCardService.updatePaymentCard(cardId, paymentCardUpdateDto));
     }
 
     @PatchMapping("/{cardId}")
+    @PreAuthorize("hasAuthority('ADMIN') or !#isActive")
     public ResponseEntity<PaymentCardResponseDto> setPaymentCardActive(@PathVariable Long cardId,
                                                                        @RequestParam Boolean isActive) {
         return ResponseEntity.ok(paymentCardService.setPaymentCardActive(cardId, isActive));

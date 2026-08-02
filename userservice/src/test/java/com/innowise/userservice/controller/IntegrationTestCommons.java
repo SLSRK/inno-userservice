@@ -6,19 +6,26 @@ import org.junit.jupiter.api.AfterEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.web.servlet.request.RequestPostProcessor;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
+@WithMockUser(authorities = "ADMIN")
 public class IntegrationTestCommons {
 
     @Autowired
@@ -80,6 +87,7 @@ public class IntegrationTestCommons {
                 """.formatted(name, surname, email);
 
         String response = mockMvc.perform(post("/api/users")
+                        .with(admin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andReturn()
@@ -100,6 +108,7 @@ public class IntegrationTestCommons {
                 """.formatted(number, LocalDate.now().plusYears(2));
 
         String response = mockMvc.perform(post("/api/users/{id}/cards", userId)
+                        .with(admin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andReturn()
@@ -115,5 +124,15 @@ public class IntegrationTestCommons {
             sb.append(ThreadLocalRandom.current().nextInt(10));
         }
         return sb.toString();
+    }
+
+    protected RequestPostProcessor admin() {
+        return authentication(
+                new UsernamePasswordAuthenticationToken(
+                        1L,
+                        null,
+                        List.of(new SimpleGrantedAuthority("ADMIN"))
+                )
+        );
     }
 }

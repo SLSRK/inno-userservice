@@ -11,6 +11,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -32,17 +33,20 @@ public class UserController {
     private final PaymentCardService paymentCardService;
 
     @PostMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<UserResponseDto> createUser(@Valid @RequestBody UserRequestDto userRequestDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(userService.createUser(userRequestDto));
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN') or authentication.principal == #id")
     public ResponseEntity<UserResponseDto> getUserById(@PathVariable Long id) {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<Page<UserResponseDto>> getAllUsers(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String surname,
@@ -52,18 +56,21 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ADMIN') or authentication.principal == #id")
     public ResponseEntity<UserResponseDto> updateUser(@PathVariable Long id,
                                                       @Valid @RequestBody UserRequestDto userRequestDto) {
         return ResponseEntity.ok(userService.updateUser(id, userRequestDto));
     }
 
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<UserResponseDto> setUserActive(@PathVariable Long id,
                                                          @RequestParam Boolean isActive) {
         return ResponseEntity.ok(userService.setUserActive(id, isActive));
     }
 
     @PostMapping("{userId}/cards")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<PaymentCardResponseDto> createPaymentCard(@PathVariable Long userId,
                                                                     @Valid @RequestBody PaymentCardCreateDto paymentCardCreateDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -71,6 +78,7 @@ public class UserController {
     }
 
     @GetMapping("{userId}/cards")
+    @PreAuthorize("hasAuthority('ADMIN') or authentication.principal == #userId")
     public ResponseEntity<List<PaymentCardResponseDto>> getAllPaymentCardsByUserId(@PathVariable Long userId) {
         return ResponseEntity.ok(paymentCardService.getAllPaymentCardsByUserId(userId));
     }

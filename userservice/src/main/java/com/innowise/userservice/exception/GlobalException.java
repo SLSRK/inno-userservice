@@ -3,6 +3,7 @@ package com.innowise.userservice.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -16,7 +17,7 @@ public class GlobalException {
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(NotFoundException ex) {
-        log.warn("Not found: {}", ex.getMessage());
+        log.info("Not found: {}", ex.getMessage());
 
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
@@ -25,7 +26,7 @@ public class GlobalException {
 
     @ExceptionHandler(NotActiveException.class)
     public ResponseEntity<Map<String, String>> handleNotActive(NotActiveException ex) {
-        log.warn("Bad request: {}", ex.getMessage());
+        log.info("Bad request: {}", ex.getMessage());
 
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
@@ -37,7 +38,7 @@ public class GlobalException {
             CardsQuantityException.class
     })
     public ResponseEntity<Map<String, String>> handleConflict(RuntimeException ex) {
-        log.warn("Conflict: {}", ex.getMessage());
+        log.info("Conflict: {}", ex.getMessage());
 
         Map<String, String> error = new HashMap<>();
         error.put("error", ex.getMessage());
@@ -46,12 +47,20 @@ public class GlobalException {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
-        log.warn("Bad request: {}", ex.getMessage());
+        log.info("Bad request: {}", ex.getMessage());
 
         Map<String, String> errors = new HashMap<>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(err -> errors.put(err.getField(), err.getDefaultMessage()));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+    }
+
+    @ExceptionHandler(AuthorizationDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleAuthorizationDenied(AuthorizationDeniedException ex) {
+        log.info("Authorization denied: {}", ex.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Access denied");
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 
     @ExceptionHandler(Exception.class)
