@@ -125,6 +125,13 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(userRepository.save(user));
     }
 
+    @Transactional
+    @CacheEvict(value = "users", key = "#id")
+    public void deleteUser(Long id) {
+        userRepository.deleteById(id);
+        log.debug("A user with the id={} successfully deleted", id);
+    }
+
     private Boolean checkEmailForExistence(String email) {
         return userRepository.findByEmail(email).isPresent();
     }

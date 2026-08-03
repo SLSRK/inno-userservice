@@ -59,4 +59,11 @@ public interface UserService {
      * @return returns the result of changing the user's state.
      */
     UserResponseDto setUserActive(Long id, Boolean isActive);
+
+    /**
+     * Removes user from db;
+     *
+     * @param id ID of a user to delete.
+     */
+    void deleteUser(Long id);
 }
