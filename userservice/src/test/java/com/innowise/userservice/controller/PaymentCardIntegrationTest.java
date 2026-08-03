@@ -16,7 +16,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest(classes = UserserviceApplication.class)
+@SpringBootTest(
+        classes = UserserviceApplication.class,
+        properties = {
+                "jwt.secret=jwt-secret-for-test-JzdWIiOiI1Iiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3ODU3NTM1MjAsImV4cC",
+        }
+)
 @AutoConfigureMockMvc(addFilters = false)
 public class PaymentCardIntegrationTest extends IntegrationTestCommons{
 
