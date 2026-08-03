@@ -70,7 +70,7 @@ public class UserController {
     }
 
     @PostMapping("{userId}/cards")
-    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN') or authentication.principal == #userId")
     public ResponseEntity<PaymentCardResponseDto> createPaymentCard(@PathVariable Long userId,
                                                                     @Valid @RequestBody PaymentCardCreateDto paymentCardCreateDto) {
         return ResponseEntity.status(HttpStatus.CREATED)
