@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -26,7 +25,7 @@ public class PaymentCardController {
     private final PaymentCardService paymentCardService;
 
     @GetMapping("/{cardId}")
-    @PostAuthorize("hasAuthority('ADMIN') or returnObject.body.userId == authentication.principal")
+    @PreAuthorize("hasAuthority('ADMIN') or @cardSecurity.isOwner(#cardId, authentication.principal)")
     public ResponseEntity<PaymentCardResponseDto> getPaymentCardById(@PathVariable Long cardId) {
         return ResponseEntity.ok(paymentCardService.getPaymentCardById(cardId));
     }
