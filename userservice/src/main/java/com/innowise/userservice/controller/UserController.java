@@ -47,6 +47,12 @@ public class UserController {
         return ResponseEntity.ok(userService.getUserById(id));
     }
 
+    @GetMapping("/batch/{ids}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<List<UserResponseDto>> getUsersByIds(@PathVariable List<Long> ids) {
+        return ResponseEntity.ok(userService.getUsersByIds(ids));
+    }
+
     @GetMapping
     @PreAuthorize("hasAnyAuthority('ADMIN')")
     public ResponseEntity<Page<UserResponseDto>> getAllUsers(
@@ -55,6 +61,12 @@ public class UserController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ResponseEntity.ok(userService.getAllUsers(name, surname, page, size));
+    }
+
+    @GetMapping("/email/{email}")
+    @PreAuthorize("hasAnyAuthority('ADMIN')")
+    public ResponseEntity<UserResponseDto> getUserByEmail(@PathVariable String email) {
+        return ResponseEntity.ok(userService.getUserByEmail(email));
     }
 
     @PutMapping("/{id}")

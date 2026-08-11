@@ -5,6 +5,8 @@ import com.innowise.userservice.model.dto.UserResponseDto;
 import com.innowise.userservice.model.entity.User;
 import org.springframework.data.domain.Page;
 
+import java.util.List;
+
 public interface UserService {
 
     /**
@@ -41,6 +43,22 @@ public interface UserService {
      * @return the users, who match the given criteria.
      */
     Page<UserResponseDto> getAllUsers(String name, String surname, int page, int size);
+
+    /**
+     * Get existing users by IDs;
+     *
+     * @param ids IDs of the users to get;
+     * @return returns the list of users if they exist.
+     */
+    List<UserResponseDto> getUsersByIds(List<Long> ids);
+
+    /**
+     * Get an existing user by email;
+     *
+     * @param email email of the user to get;
+     * @return returns the user if it exists.
+     */
+    UserResponseDto getUserByEmail(String email);
 
     /**
      * Update a user's data;

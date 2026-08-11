@@ -21,6 +21,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -69,6 +73,22 @@ public class UserServiceImpl implements UserService {
 
         return userRepository.findAll(spec, pageable)
                 .map(userMapper :: toDto);
+    }
+
+    public List<UserResponseDto> getUsersByIds(List<Long> ids){
+        return userRepository.findAllById(ids).stream()
+                .filter(u -> u.getActive())
+                .map(userMapper :: toDto)
+                .distinct()
+                .collect(Collectors.toCollection(ArrayList:: new));
+    }
+
+    public UserResponseDto getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new NotFoundException("User not found."));
+        if(!user.getActive()) {
+            throw new NotActiveException("User's profile not active.");
+        }
+        return userMapper.toDto(user);
     }
 
     @Transactional
