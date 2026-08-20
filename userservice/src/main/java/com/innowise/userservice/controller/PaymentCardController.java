@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/cards")
+@RequestMapping("/api/v1/cards")
 @RequiredArgsConstructor
 public class PaymentCardController {
 

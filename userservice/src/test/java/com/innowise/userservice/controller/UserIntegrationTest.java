@@ -38,6 +38,10 @@ class UserIntegrationTest extends IntegrationTestCommons {
     private static final LocalDate NEW_BIRTH_DATE = LocalDate.of(1999, 1, 1);
     private static final Long NON_EXISTENT_ID = 999_999_999L;
     private static final String TEST_EMAIL_DOMAIN = "@test.com";
+    private static final String URI = "/api/v1/users";
+    private static final String URI_W_ID = "/api/v1/users/{id}";
+    private static final String URI_W_ID_STATUS = "/api/v1/users/{id}/status";
+    private static final String URI_W_ID_CARDS = "/api/v1/users/{id}/cards";
 
     @Test
     void createUser_shouldReturnCreatedUser() throws Exception {
@@ -47,7 +51,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         userRequestDto.setBirthDate(BIRTH_DATE);
         userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
 
-        String response = mockMvc.perform(post("/api/users")
+        String response = mockMvc.perform(post(URI)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userRequestDto))
                         .with(admin()))
@@ -73,7 +77,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         userRequestDto.setBirthDate(LocalDate.of(2000, 1, 1));
         userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post(URI)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userRequestDto))
                         .with(admin()))
@@ -89,7 +93,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         userRequestDto.setBirthDate(LocalDate.of(2000, 1, 1));
         userRequestDto.setEmail(UUID.randomUUID().toString());
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post(URI)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userRequestDto))
                         .with(admin()))
@@ -105,7 +109,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         userRequestDto.setBirthDate(LocalDate.now().plusDays(1));
         userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post(URI)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userRequestDto))
                         .with(admin()))
@@ -117,7 +121,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void getUserById_shouldReturnUser_whenExists() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        String response = mockMvc.perform(get("/api/users/{id}", userId).with(admin()))
+        String response = mockMvc.perform(get(URI_W_ID, userId).with(admin()))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -131,17 +135,17 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
     @Test
     void getUserById_shouldReturnNotFound_whenUserDoesNotExist() throws Exception {
-        mockMvc.perform(get("/api/users/{id}", NON_EXISTENT_ID).with(admin()))
+        mockMvc.perform(get(URI_W_ID, NON_EXISTENT_ID).with(admin()))
                 .andExpect(status().isNotFound());
     }
 
     @Test
     void getUserById_shouldReturnBadRequest_whenUserIsNotActive() throws Exception {
         Long userId = createUser(NAME, SURNAME);
-        mockMvc.perform(patch("/api/users/{id}/status", userId).param("isActive", "false"))
+        mockMvc.perform(patch(URI_W_ID_STATUS, userId).param("isActive", "false"))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/users/{id}", userId).with(admin()))
+        mockMvc.perform(get(URI_W_ID, userId).with(admin()))
                 .andExpect(status().isBadRequest());
     }
 
@@ -149,7 +153,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void getAllUsers_shouldFilterByNameAndSurname() throws Exception {
         Long userId = createUser(NEW_NAME, NEW_SURNAME);
 
-        mockMvc.perform(get("/api/users")
+        mockMvc.perform(get(URI)
                         .param("name", NEW_NAME)
                         .param("surname", NEW_SURNAME)
                         .with(admin()))
@@ -160,7 +164,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
     @Test
     void getAllUsers_shouldReturnEmptyPage_whenNoMatch() throws Exception {
-        mockMvc.perform(get("/api/users")
+        mockMvc.perform(get(URI)
                         .param("name", "definitely-not-existing-" + UUID.randomUUID())
                         .with(admin()))
                 .andExpect(status().isOk())
@@ -177,7 +181,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         userRequestDto.setBirthDate(NEW_BIRTH_DATE);
         userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
 
-        String response = mockMvc.perform(put("/api/users/{id}", userId)
+        String response = mockMvc.perform(put(URI_W_ID, userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userRequestDto))
                         .with(admin()))
@@ -200,7 +204,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         userRequestDto.setBirthDate(NEW_BIRTH_DATE);
         userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
 
-        mockMvc.perform(put("/api/users/{id}", NON_EXISTENT_ID)
+        mockMvc.perform(put(URI_W_ID, NON_EXISTENT_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userRequestDto))
                         .with(admin()))
@@ -211,7 +215,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void setUserActive_shouldDeactivateUser() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        String response = mockMvc.perform(patch("/api/users/{id}/status", userId)
+        String response = mockMvc.perform(patch(URI_W_ID_STATUS, userId)
                         .param("isActive", "false")
                         .with(admin()))
                 .andExpect(status().isOk())
@@ -227,12 +231,12 @@ class UserIntegrationTest extends IntegrationTestCommons {
     @Test
     void setUserActive_shouldReactivateUser() throws Exception {
         Long userId = createUser(NAME, SURNAME);
-        mockMvc.perform(patch("/api/users/{id}/status", userId)
+        mockMvc.perform(patch(URI_W_ID_STATUS, userId)
                         .param("isActive", "false")
                         .with(admin()))
                 .andExpect(status().isOk());
 
-        String response = mockMvc.perform(patch("/api/users/{id}/status", userId)
+        String response = mockMvc.perform(patch(URI_W_ID_STATUS, userId)
                         .param("isActive", "true")
                         .with(admin()))
                 .andExpect(status().isOk())
@@ -253,7 +257,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         paymentCardCreateDto.setNumber(createCardNumber());
         paymentCardCreateDto.setExpirationDate(LocalDate.now().plusYears(2));
 
-        String response = mockMvc.perform(post("/api/users/{id}/cards", userId)
+        String response = mockMvc.perform(post(URI_W_ID_CARDS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(paymentCardCreateDto))
                         .with(admin()))
@@ -276,7 +280,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         paymentCardCreateDto.setNumber("12345");
         paymentCardCreateDto.setExpirationDate(LocalDate.now().plusYears(2));
 
-        mockMvc.perform(post("/api/users/{id}/cards", userId)
+        mockMvc.perform(post(URI_W_ID_CARDS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(paymentCardCreateDto))
                         .with(admin()))
@@ -292,7 +296,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         paymentCardCreateDto.setNumber(createCardNumber());
         paymentCardCreateDto.setExpirationDate(LocalDate.now().minusDays(1));
 
-        mockMvc.perform(post("/api/users/{id}/cards", userId)
+        mockMvc.perform(post(URI_W_ID_CARDS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(paymentCardCreateDto))
                         .with(admin()))
@@ -310,13 +314,13 @@ class UserIntegrationTest extends IntegrationTestCommons {
         paymentCardCreateDto.setNumber(number);
         paymentCardCreateDto.setExpirationDate(LocalDate.now().plusYears(2));
 
-        mockMvc.perform(post("/api/users/{id}/cards", firstHolder)
+        mockMvc.perform(post(URI_W_ID_CARDS, firstHolder)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(paymentCardCreateDto))
                         .with(admin()))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(post("/api/users/{id}/cards", secondHolder)
+        mockMvc.perform(post(URI_W_ID_CARDS, secondHolder)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(paymentCardCreateDto))
                         .with(admin()))
@@ -334,7 +338,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         limitPlusOneDto.setNumber(createCardNumber());
         limitPlusOneDto.setExpirationDate(LocalDate.now().plusYears(2));
 
-        mockMvc.perform(post("/api/users/{id}/cards", userId)
+        mockMvc.perform(post(URI_W_ID_CARDS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(limitPlusOneDto))
                         .with(admin()))
@@ -347,7 +351,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
         createCard(userId);
         createCard(userId);
 
-        mockMvc.perform(get("/api/users/{id}/cards", userId).with(admin()))
+        mockMvc.perform(get(URI_W_ID_CARDS, userId).with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }
@@ -356,14 +360,14 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void getAllPaymentCardsByUserId_shouldReturnEmptyList_whenUserHasNoCards() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        mockMvc.perform(get("/api/users/{id}/cards", userId).with(admin()))
+        mockMvc.perform(get(URI_W_ID_CARDS, userId).with(admin()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
     void getAllPaymentCardsByUserId_shouldReturnNotFound_whenUserDoesNotExist() throws Exception {
-        mockMvc.perform(get("/api/users/{id}/cards", NON_EXISTENT_ID).with(admin()))
+        mockMvc.perform(get(URI_W_ID_CARDS, NON_EXISTENT_ID).with(admin()))
                 .andExpect(status().isNotFound());
     }
 }

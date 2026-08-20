@@ -86,7 +86,7 @@ public class IntegrationTestCommons {
                 }
                 """.formatted(name, surname, email);
 
-        String response = mockMvc.perform(post("/api/users")
+        String response = mockMvc.perform(post("/api/v1/users")
                         .with(admin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
@@ -107,7 +107,7 @@ public class IntegrationTestCommons {
                 }
                 """.formatted(number, LocalDate.now().plusYears(2));
 
-        String response = mockMvc.perform(post("/api/users/{id}/cards", userId)
+        String response = mockMvc.perform(post("/api/v1/users/{id}/cards", userId)
                         .with(admin())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
