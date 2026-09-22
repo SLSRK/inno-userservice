@@ -45,8 +45,8 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     public PaymentCardResponseDto createPaymentCard(Long userId, PaymentCardCreateDto paymentCardCreateDto) {
         log.debug("Creating a new card for user with id={}, with: number={}, expiration_date={}",
                 userId,
-                paymentCardCreateDto.getNumber(),
-                paymentCardCreateDto.getExpirationDate());
+                paymentCardCreateDto.number(),
+                paymentCardCreateDto.expirationDate());
         PaymentCard paymentCard = paymentCardMapper.toEntityWithUser(paymentCardCreateDto);
         setUserInfo(paymentCard, userId);
         paymentCard.setActive(paymentCard.getUser().getActive());
@@ -102,14 +102,14 @@ public class PaymentCardServiceImpl implements PaymentCardService {
     public PaymentCardResponseDto updatePaymentCard(Long id, PaymentCardUpdateDto paymentCardUpdateDto) {
         log.debug("Updating the card with the id={}, with data: number={}, expiration_date={}, user_id={}",
                 id,
-                paymentCardUpdateDto.getNumber(),
-                paymentCardUpdateDto.getExpirationDate(),
-                paymentCardUpdateDto.getUserId());
+                paymentCardUpdateDto.number(),
+                paymentCardUpdateDto.expirationDate(),
+                paymentCardUpdateDto.userId());
         PaymentCard paymentCard = paymentCardRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Payment card not found"));
 
-        if(!paymentCardUpdateDto.getUserId().equals(paymentCard.getUser().getId())) {
-            setUserInfo(paymentCard, paymentCardUpdateDto.getUserId());
+        if(!paymentCardUpdateDto.userId().equals(paymentCard.getUser().getId())) {
+            setUserInfo(paymentCard, paymentCardUpdateDto.userId());
         }
         PaymentCard newPaymentCard = paymentCardMapper.toEntity(paymentCardUpdateDto);
         if(!paymentCard.getNumber().equals(newPaymentCard.getNumber()) && checkNumberForExistence(newPaymentCard.getNumber())) {

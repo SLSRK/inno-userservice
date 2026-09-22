@@ -40,20 +40,21 @@ class UserUnitTest {
 
     @Test
     void createUser_shouldCreateUser() {
-        UserRequestDto userRequestDto = new UserRequestDto();
-        userRequestDto.setName("Ivan");
-        userRequestDto.setSurname("Slesarenko");
-        userRequestDto.setBirthDate(LocalDate.of(2001, 6, 25));
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name("Ivan")
+                .surname("Slesarenko")
+                .birthDate(LocalDate.of(2001, 6, 25))
+                .build();
         User user = new User();
         User saved = currentUser();
-        UserResponseDto response = new UserResponseDto();
+        UserResponseDto userResponseDto = UserResponseDto.builder().build();
 
         when(userMapper.toEntity(userRequestDto)).thenReturn(user);
         when(userRepository.save(user)).thenReturn(saved);
-        when(userMapper.toDto(saved)).thenReturn(response);
+        when(userMapper.toDto(saved)).thenReturn(userResponseDto);
 
         UserResponseDto result = userService.createUser(userRequestDto);
-        assertEquals(response, result);
+        assertEquals(userResponseDto, result);
         assertTrue(user.getActive());
         verify(userRepository).save(user);
     }
@@ -61,13 +62,13 @@ class UserUnitTest {
     @Test
     void getUserById_shouldReturnUser() {
         User user = currentUser();
-        UserResponseDto dto = new UserResponseDto();
+        UserResponseDto userResponseDto = UserResponseDto.builder().build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userMapper.toDto(user)).thenReturn(dto);
+        when(userMapper.toDto(user)).thenReturn(userResponseDto);
 
         UserResponseDto result = userService.getUserById(1L);
-        assertEquals(dto, result);
+        assertEquals(userResponseDto, result);
     }
 
 
@@ -93,17 +94,18 @@ class UserUnitTest {
     void updateUser_shouldUpdateFields() {
         User user = currentUser();
 
-        UserRequestDto userRequestDto = new UserRequestDto();
-        userRequestDto.setName("Jan");
-        userRequestDto.setSurname("Slesarensky");
-        userRequestDto.setBirthDate(LocalDate.now());
-        userRequestDto.setEmail(user.getEmail());
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name("Jan")
+                .surname("Slesarensky")
+                .birthDate(LocalDate.now())
+                .email(user.getEmail())
+                .build();
         User newUser = newUser();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userMapper.toEntity(userRequestDto)).thenReturn(newUser);
         when(userRepository.save(user)).thenReturn(user);
-        when(userMapper.toDto(user)).thenReturn(new UserResponseDto());
+        when(userMapper.toDto(user)).thenReturn(UserResponseDto.builder().build());
 
         userService.updateUser(1L, userRequestDto);
 
@@ -117,7 +119,7 @@ class UserUnitTest {
                 .thenReturn(Optional.empty());
         assertThrows(
                 NotFoundException.class,
-                () -> userService.updateUser(1L, new UserRequestDto())
+                () -> userService.updateUser(1L, UserRequestDto.builder().build())
         );
     }
 
@@ -134,7 +136,7 @@ class UserUnitTest {
         when(userRepository.save(user))
                 .thenReturn(user);
         when(userMapper.toDto(user))
-                .thenReturn(new UserResponseDto());
+                .thenReturn(UserResponseDto.builder().build());
 
         userService.setUserActive(1L,false);
         assertFalse(user.getActive());
@@ -148,21 +150,22 @@ class UserUnitTest {
 
         User user = currentUser();
         user.getPaymentCards().add(paymentCard);
-        UserRequestDto dto = new UserRequestDto();
-        dto.setName("Jan");
-        dto.setSurname("Slesarensky");
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name("Jan")
+                .surname("Slesarensky")
+                .build();
         User newUser = newUser();
 
         when(userRepository.findById(1L))
                 .thenReturn(Optional.of(user));
-        when(userMapper.toEntity(dto))
+        when(userMapper.toEntity(userRequestDto))
                 .thenReturn(newUser);
         when(userRepository.save(user))
                 .thenReturn(user);
         when(userMapper.toDto(user))
-                .thenReturn(new UserResponseDto());
+                .thenReturn(UserResponseDto.builder().build());
 
-        userService.updateUser(1L, dto);
+        userService.updateUser(1L, userRequestDto);
         assertEquals("Jan Slesarensky", paymentCard.getHolder());
     }
 
@@ -189,7 +192,7 @@ class UserUnitTest {
         when(userRepository.save(user))
                 .thenReturn(user);
         when(userMapper.toDto(user))
-                .thenReturn(new UserResponseDto());
+                .thenReturn(UserResponseDto.builder().build());
         userService.setUserActive(1L, true);
         assertTrue(user.getActive());
         assertFalse(paymentCard.getActive());
