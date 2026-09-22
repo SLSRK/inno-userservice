@@ -36,11 +36,11 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponseDto createUser(UserRequestDto userRequestDto) {
         log.debug("Creating a new user: name={}, surname={}, birth_date={}, email={}",
-                userRequestDto.getName(),
-                userRequestDto.getSurname(),
-                userRequestDto.getBirthDate(),
-                userRequestDto.getEmail());
-        if(checkEmailForExistence(userRequestDto.getEmail())) {
+                userRequestDto.name(),
+                userRequestDto.surname(),
+                userRequestDto.birthDate(),
+                userRequestDto.email());
+        if(checkEmailForExistence(userRequestDto.email())) {
             throw new AlreadyExistsException("This email is taken.");
         }
         User user = userMapper.toEntity(userRequestDto);
@@ -96,10 +96,10 @@ public class UserServiceImpl implements UserService {
     public UserResponseDto updateUser(Long id, UserRequestDto userRequestDto) {
         log.debug("Updating the user with the id:{}. New info: name={}, surname={}, birth_date={}, email={}",
                 id,
-                userRequestDto.getName(),
-                userRequestDto.getSurname(),
-                userRequestDto.getBirthDate(),
-                userRequestDto.getEmail());
+                userRequestDto.name(),
+                userRequestDto.surname(),
+                userRequestDto.birthDate(),
+                userRequestDto.email());
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("User not found."));
 
@@ -115,7 +115,7 @@ public class UserServiceImpl implements UserService {
         user.setName(newUser.getName());
         user.setSurname(newUser.getSurname());
         user.setBirthDate(newUser.getBirthDate());
-        if (!user.getEmail().equals(newUser.getEmail()) && checkEmailForExistence(userRequestDto.getEmail())) {
+        if (!user.getEmail().equals(newUser.getEmail()) && checkEmailForExistence(userRequestDto.email())) {
             throw new AlreadyExistsException("This email is taken.");
         }
         user.setEmail(newUser.getEmail());

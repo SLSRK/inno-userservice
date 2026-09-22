@@ -56,7 +56,7 @@ class PaymentCardUnitTest {
     void createPaymentCard_shouldCreateCard() {
         User user = currentUser();
         PaymentCard paymentCard = new PaymentCard();
-        PaymentCardResponseDto dto = new PaymentCardResponseDto();
+        PaymentCardResponseDto paymentCardResponseDto = PaymentCardResponseDto.builder().build();
 
         when(userService.getUserEntityById(1L))
                 .thenReturn(user);
@@ -65,14 +65,14 @@ class PaymentCardUnitTest {
         when(paymentCardRepository.save(paymentCard))
                 .thenReturn(paymentCard);
         when(paymentCardMapper.toDto(paymentCard))
-                .thenReturn(dto);
+                .thenReturn(paymentCardResponseDto);
 
         PaymentCardResponseDto result =
                 paymentCardService.createPaymentCard(
                         1L,
-                        new PaymentCardCreateDto()
+                        PaymentCardCreateDto.builder().build()
                 );
-        assertEquals(dto,result);
+        assertEquals(paymentCardResponseDto,result);
         assertEquals("Ivan Slesarenko",paymentCard.getHolder());
         assertEquals(user,paymentCard.getUser());
     }
@@ -91,7 +91,7 @@ class PaymentCardUnitTest {
                 CardsQuantityException.class,
                 () -> paymentCardService.createPaymentCard(
                         1L,
-                        new PaymentCardCreateDto()
+                        PaymentCardCreateDto.builder().build()
                 )
         );
     }
@@ -104,7 +104,7 @@ class PaymentCardUnitTest {
                 NotFoundException.class,
                 () -> paymentCardService.createPaymentCard(
                         1L,
-                        new PaymentCardCreateDto()
+                        PaymentCardCreateDto.builder().build()
                 )
         );
     }
@@ -123,9 +123,9 @@ class PaymentCardUnitTest {
         when(paymentCardRepository.save(paymentCard))
                 .thenReturn(paymentCard);
         when(paymentCardMapper.toDto(paymentCard))
-                .thenReturn(new PaymentCardResponseDto());
+                .thenReturn(PaymentCardResponseDto.builder().build());
 
-        paymentCardService.createPaymentCard(1L, new PaymentCardCreateDto());
+        paymentCardService.createPaymentCard(1L, PaymentCardCreateDto.builder().build());
 
         assertFalse(paymentCard.getActive());
     }
@@ -137,7 +137,7 @@ class PaymentCardUnitTest {
         when(paymentCardRepository.findById(1L))
                 .thenReturn(Optional.of(paymentCard));
         when(paymentCardMapper.toDto(paymentCard))
-                .thenReturn(new PaymentCardResponseDto());
+                .thenReturn(PaymentCardResponseDto.builder().build());
         assertNotNull(paymentCardService.getPaymentCardById(1L));
     }
 
@@ -173,14 +173,15 @@ class PaymentCardUnitTest {
         paymentCard.setUser(user);
         paymentCard.setExpirationDate(LocalDate.now().plusYears(1));
 
-        PaymentCardUpdateDto updateDto = new PaymentCardUpdateDto();
-        updateDto.setUserId(1L);
-        updateDto.setNumber("9999888877776666");
-        updateDto.setExpirationDate(LocalDate.now().plusYears(2));
+        PaymentCardUpdateDto updateDto = PaymentCardUpdateDto.builder()
+                .userId(1L)
+                .number("9999888877776666")
+                .expirationDate(LocalDate.now().plusYears(2))
+                .build();
 
         PaymentCard mapped = new PaymentCard();
-        mapped.setNumber(updateDto.getNumber());
-        mapped.setExpirationDate(updateDto.getExpirationDate());
+        mapped.setNumber(updateDto.number());
+        mapped.setExpirationDate(updateDto.expirationDate());
 
         when(paymentCardRepository.findById(1L))
                 .thenReturn(Optional.of(paymentCard));
@@ -191,12 +192,12 @@ class PaymentCardUnitTest {
         when(paymentCardRepository.save(paymentCard))
                 .thenReturn(paymentCard);
         when(paymentCardMapper.toDto(paymentCard))
-                .thenReturn(new PaymentCardResponseDto());
+                .thenReturn(PaymentCardResponseDto.builder().build());
 
         paymentCardService.updatePaymentCard(1L, updateDto);
 
         assertEquals("9999888877776666", paymentCard.getNumber());
-        assertEquals(updateDto.getExpirationDate(), paymentCard.getExpirationDate());
+        assertEquals(updateDto.expirationDate(), paymentCard.getExpirationDate());
         assertEquals(user, paymentCard.getUser());
     }
 
@@ -211,7 +212,7 @@ class PaymentCardUnitTest {
         when(paymentCardRepository.save(paymentCard))
                 .thenReturn(paymentCard);
         when(paymentCardMapper.toDto(paymentCard))
-                .thenReturn(new PaymentCardResponseDto());
+                .thenReturn(PaymentCardResponseDto.builder().build());
         paymentCardService.setPaymentCardActive(1L, false);
 
         assertFalse(paymentCard.getActive());
@@ -228,7 +229,7 @@ class PaymentCardUnitTest {
         when(userService.getUserEntityById(1L))
                 .thenReturn(user);
         when(paymentCardMapper.toDto(activeCard))
-                .thenReturn(new PaymentCardResponseDto());
+                .thenReturn(PaymentCardResponseDto.builder().build());
 
         List<PaymentCardResponseDto> result =
                 paymentCardService.getAllPaymentCardsByUserId(1L);

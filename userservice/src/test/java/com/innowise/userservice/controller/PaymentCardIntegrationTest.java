@@ -87,17 +87,18 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
         Long userId = createUser(NAME, SURNAME);
         Long cardId = createCard(userId);
 
-        PaymentCardUpdateDto paymentCardUpdateDto = new PaymentCardUpdateDto();
-        paymentCardUpdateDto.setUserId(userId);
-        paymentCardUpdateDto.setNumber(createCardNumber());
-        paymentCardUpdateDto.setExpirationDate(LocalDate.now().plusYears(3));
+        PaymentCardUpdateDto paymentCardUpdateDto = PaymentCardUpdateDto.builder()
+                .userId(userId)
+                .number(createCardNumber())
+                .expirationDate(LocalDate.now().plusYears(3))
+                .build();
 
         mockMvc.perform(put(URI_W_ID, cardId)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(paymentCardUpdateDto))
                         .with(admin()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.number").value(paymentCardUpdateDto.getNumber()))
+                .andExpect(jsonPath("$.number").value(paymentCardUpdateDto.number()))
                 .andExpect(jsonPath("$.userId").value(userId));
     }
 
@@ -107,10 +108,11 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
         Long newOwner = createUser(NEW_NAME, NEW_SURNAME);
         Long cardId = createCard(owner);
 
-        PaymentCardUpdateDto paymentCardUpdateDto = new PaymentCardUpdateDto();
-        paymentCardUpdateDto.setUserId(newOwner);
-        paymentCardUpdateDto.setNumber(createCardNumber());
-        paymentCardUpdateDto.setExpirationDate(LocalDate.now().plusYears(3));
+        PaymentCardUpdateDto paymentCardUpdateDto = PaymentCardUpdateDto.builder()
+                .userId(newOwner)
+                .number(createCardNumber())
+                .expirationDate(LocalDate.now().plusYears(3))
+                .build();
 
         mockMvc.perform(put(URI_W_ID, cardId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -130,10 +132,11 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
             createCard(fullOwner);
         }
 
-        PaymentCardUpdateDto paymentCardUpdateDto = new PaymentCardUpdateDto();
-        paymentCardUpdateDto.setUserId(fullOwner);
-        paymentCardUpdateDto.setNumber(createCardNumber());
-        paymentCardUpdateDto.setExpirationDate(LocalDate.now().plusYears(3));
+        PaymentCardUpdateDto paymentCardUpdateDto = PaymentCardUpdateDto.builder()
+                .userId(fullOwner)
+                .number(createCardNumber())
+                .expirationDate(LocalDate.now().plusYears(3))
+                .build();
 
         mockMvc.perform(put(URI_W_ID, cardId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -147,10 +150,11 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
         Long userId = createUser(NAME, SURNAME);
         Long cardId = createCard(userId);
 
-        PaymentCardUpdateDto paymentCardUpdateDto = new PaymentCardUpdateDto();
-        paymentCardUpdateDto.setUserId(userId);
-        paymentCardUpdateDto.setNumber(createCardNumber());
-        paymentCardUpdateDto.setExpirationDate(LocalDate.now().minusDays(1));
+        PaymentCardUpdateDto paymentCardUpdateDto = PaymentCardUpdateDto.builder()
+                .userId(userId)
+                .number(createCardNumber())
+                .expirationDate(LocalDate.now().minusDays(1))
+                .build();
 
         mockMvc.perform(put(URI_W_ID, cardId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -164,10 +168,11 @@ public class PaymentCardIntegrationTest extends IntegrationTestCommons{
     void updatePaymentCard_shouldReturnNotFound_whenCardDoesNotExist() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        PaymentCardUpdateDto paymentCardUpdateDto = new PaymentCardUpdateDto();
-        paymentCardUpdateDto.setUserId(userId);
-        paymentCardUpdateDto.setNumber(createCardNumber());
-        paymentCardUpdateDto.setExpirationDate(LocalDate.now().plusYears(1));
+        PaymentCardUpdateDto paymentCardUpdateDto = PaymentCardUpdateDto.builder()
+                .userId(userId)
+                .number(createCardNumber())
+                .expirationDate(LocalDate.now().plusYears(1))
+                .build();
 
         mockMvc.perform(put(URI_W_ID, NON_EXISTENT_ID)
                         .contentType(MediaType.APPLICATION_JSON)

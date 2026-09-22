@@ -45,11 +45,12 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
     @Test
     void createUser_shouldReturnCreatedUser() throws Exception {
-        UserRequestDto userRequestDto = new UserRequestDto();
-        userRequestDto.setName(NAME);
-        userRequestDto.setSurname(SURNAME);
-        userRequestDto.setBirthDate(BIRTH_DATE);
-        userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name(NAME)
+                .surname(SURNAME)
+                .birthDate(BIRTH_DATE)
+                .email(UUID.randomUUID() + TEST_EMAIL_DOMAIN)
+                .build();
 
         String response = mockMvc.perform(post(URI)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -62,20 +63,21 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         UserResponseDto actual = objectMapper.readValue(response, UserResponseDto.class);
 
-        assertEquals(NAME, actual.getName());
-        assertEquals(SURNAME, actual.getSurname());
-        assertTrue(actual.getActive());
-        assertNotNull(actual.getId());
-        assertTrue(actual.getPaymentCards().isEmpty());
+        assertEquals(NAME, actual.name());
+        assertEquals(SURNAME, actual.surname());
+        assertTrue(actual.active());
+        assertNotNull(actual.id());
+        assertTrue(actual.paymentCards().isEmpty());
     }
 
     @Test
     void createUser_shouldReturnBadRequest_whenNameIsBlank() throws Exception {
-        UserRequestDto userRequestDto = new UserRequestDto();
-        userRequestDto.setName("");
-        userRequestDto.setSurname(SURNAME);
-        userRequestDto.setBirthDate(LocalDate.of(2000, 1, 1));
-        userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name("")
+                .surname(SURNAME)
+                .birthDate(LocalDate.of(2000, 1, 1))
+                .email(UUID.randomUUID() + TEST_EMAIL_DOMAIN)
+                .build();
 
         mockMvc.perform(post(URI)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -87,11 +89,12 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
     @Test
     void createUser_shouldReturnBadRequest_whenEmailIsInvalid() throws Exception {
-        UserRequestDto userRequestDto = new UserRequestDto();
-        userRequestDto.setName(NAME);
-        userRequestDto.setSurname(SURNAME);
-        userRequestDto.setBirthDate(LocalDate.of(2000, 1, 1));
-        userRequestDto.setEmail(UUID.randomUUID().toString());
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name(NAME)
+                .surname(SURNAME)
+                .birthDate(LocalDate.of(2000, 1, 1))
+                .email(UUID.randomUUID().toString())
+                .build();
 
         mockMvc.perform(post(URI)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -103,11 +106,12 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
     @Test
     void createUser_shouldReturnBadRequest_whenBirthDateInFuture() throws Exception {
-        UserRequestDto userRequestDto = new UserRequestDto();
-        userRequestDto.setName(NAME);
-        userRequestDto.setSurname(SURNAME);
-        userRequestDto.setBirthDate(LocalDate.now().plusDays(1));
-        userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name(NAME)
+                .surname(SURNAME)
+                .birthDate(LocalDate.now().plusDays(1))
+                .email(UUID.randomUUID() + TEST_EMAIL_DOMAIN)
+                .build();
 
         mockMvc.perform(post(URI)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -129,8 +133,8 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         UserResponseDto actual = objectMapper.readValue(response, UserResponseDto.class);
 
-        assertEquals(userId, actual.getId());
-        assertEquals(NAME, actual.getName());
+        assertEquals(userId, actual.id());
+        assertEquals(NAME, actual.name());
     }
 
     @Test
@@ -175,11 +179,12 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void updateUser_shouldUpdateFields() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        UserRequestDto userRequestDto = new UserRequestDto();
-        userRequestDto.setName(NEW_NAME);
-        userRequestDto.setSurname(NEW_SURNAME);
-        userRequestDto.setBirthDate(NEW_BIRTH_DATE);
-        userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name(NEW_NAME)
+                .surname(NEW_SURNAME)
+                .birthDate(NEW_BIRTH_DATE)
+                .email(UUID.randomUUID() + TEST_EMAIL_DOMAIN)
+                .build();
 
         String response = mockMvc.perform(put(URI_W_ID, userId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -192,17 +197,18 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         UserResponseDto actual = objectMapper.readValue(response, UserResponseDto.class);
 
-        assertEquals(NEW_NAME, actual.getName());
-        assertEquals(NEW_SURNAME, actual.getSurname());
+        assertEquals(NEW_NAME, actual.name());
+        assertEquals(NEW_SURNAME, actual.surname());
     }
 
     @Test
     void updateUser_shouldReturnNotFound_whenUserDoesNotExist() throws Exception {
-        UserRequestDto userRequestDto = new UserRequestDto();
-        userRequestDto.setName(NAME);
-        userRequestDto.setSurname(SURNAME);
-        userRequestDto.setBirthDate(NEW_BIRTH_DATE);
-        userRequestDto.setEmail(UUID.randomUUID() + TEST_EMAIL_DOMAIN);
+        UserRequestDto userRequestDto = UserRequestDto.builder()
+                .name(NAME)
+                .surname(SURNAME)
+                .birthDate(NEW_BIRTH_DATE)
+                .email(UUID.randomUUID() + TEST_EMAIL_DOMAIN)
+                .build();
 
         mockMvc.perform(put(URI_W_ID, NON_EXISTENT_ID)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -225,7 +231,7 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         UserResponseDto actual = objectMapper.readValue(response, UserResponseDto.class);
 
-        assertEquals(Boolean.FALSE, actual.getActive());
+        assertEquals(Boolean.FALSE, actual.active());
     }
 
     @Test
@@ -246,16 +252,17 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         UserResponseDto actual = objectMapper.readValue(response, UserResponseDto.class);
 
-        assertEquals(Boolean.TRUE, actual.getActive());
+        assertEquals(Boolean.TRUE, actual.active());
     }
 
     @Test
     void createPaymentCard_shouldCreateCardForUser() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        PaymentCardCreateDto paymentCardCreateDto = new PaymentCardCreateDto();
-        paymentCardCreateDto.setNumber(createCardNumber());
-        paymentCardCreateDto.setExpirationDate(LocalDate.now().plusYears(2));
+        PaymentCardCreateDto paymentCardCreateDto = PaymentCardCreateDto.builder()
+                .number(createCardNumber())
+                .expirationDate(LocalDate.now().plusYears(2))
+                .build();
 
         String response = mockMvc.perform(post(URI_W_ID_CARDS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -268,17 +275,18 @@ class UserIntegrationTest extends IntegrationTestCommons {
 
         PaymentCardResponseDto actual = objectMapper.readValue(response, PaymentCardResponseDto.class);
 
-        assertEquals(NAME + " " + SURNAME, actual.getHolder());
-        assertEquals(userId, actual.getUserId());
+        assertEquals(NAME + " " + SURNAME, actual.holder());
+        assertEquals(userId, actual.userId());
     }
 
     @Test
     void createPaymentCard_shouldReturnBadRequest_whenNumberIsWrongLength() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        PaymentCardCreateDto paymentCardCreateDto = new PaymentCardCreateDto();
-        paymentCardCreateDto.setNumber("12345");
-        paymentCardCreateDto.setExpirationDate(LocalDate.now().plusYears(2));
+        PaymentCardCreateDto paymentCardCreateDto = PaymentCardCreateDto.builder()
+                .number("12345")
+                .expirationDate(LocalDate.now().plusYears(2))
+                .build();
 
         mockMvc.perform(post(URI_W_ID_CARDS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -292,9 +300,10 @@ class UserIntegrationTest extends IntegrationTestCommons {
     void createPaymentCard_shouldReturnBadRequest_whenExpirationDateInPast() throws Exception {
         Long userId = createUser(NAME, SURNAME);
 
-        PaymentCardCreateDto paymentCardCreateDto = new PaymentCardCreateDto();
-        paymentCardCreateDto.setNumber(createCardNumber());
-        paymentCardCreateDto.setExpirationDate(LocalDate.now().minusDays(1));
+        PaymentCardCreateDto paymentCardCreateDto = PaymentCardCreateDto.builder()
+                .number(createCardNumber())
+                .expirationDate(LocalDate.now().minusDays(1))
+                .build();
 
         mockMvc.perform(post(URI_W_ID_CARDS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -310,9 +319,10 @@ class UserIntegrationTest extends IntegrationTestCommons {
         Long secondHolder = createUser(NEW_NAME, NEW_SURNAME);
         String number = createCardNumber();
 
-        PaymentCardCreateDto paymentCardCreateDto = new PaymentCardCreateDto();
-        paymentCardCreateDto.setNumber(number);
-        paymentCardCreateDto.setExpirationDate(LocalDate.now().plusYears(2));
+        PaymentCardCreateDto paymentCardCreateDto = PaymentCardCreateDto.builder()
+                .number(number)
+                .expirationDate(LocalDate.now().plusYears(2))
+                .build();
 
         mockMvc.perform(post(URI_W_ID_CARDS, firstHolder)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -334,9 +344,10 @@ class UserIntegrationTest extends IntegrationTestCommons {
             createCard(userId);
         }
 
-        PaymentCardCreateDto limitPlusOneDto = new PaymentCardCreateDto();
-        limitPlusOneDto.setNumber(createCardNumber());
-        limitPlusOneDto.setExpirationDate(LocalDate.now().plusYears(2));
+        PaymentCardCreateDto limitPlusOneDto = PaymentCardCreateDto.builder()
+                .number(createCardNumber())
+                .expirationDate(LocalDate.now().plusYears(2))
+                .build();
 
         mockMvc.perform(post(URI_W_ID_CARDS, userId)
                         .contentType(MediaType.APPLICATION_JSON)
